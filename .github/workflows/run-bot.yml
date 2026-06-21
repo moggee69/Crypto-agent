@@ -1,0 +1,60 @@
+name: Crypto Agent (dry-run)
+
+# Runs the paper-trading bot on a schedule in GitHub's cloud, then commits the
+# updated state files back to the repo so the simulation continues run-to-run.
+#
+# IMPORTANT: GitHub cron is always in UTC. The times below map to your local
+# clock during British Summer Time (BST = UTC+1):
+#   08:00 UTC = 09:00 BST    11:00 UTC = 12:00 BST    16:00 UTC = 17:00 BST
+# When the UK clocks go back to GMT (late Oct), local times shift 1h earlier
+# (08:00/11:00/16:00 local). For a once-daily momentum bot that drift is
+# harmless; bump each hour by +1 in winter if you want exact local times.
+#
+# Note: GitHub's scheduler can start a few minutes late and, under heavy load,
+# may occasionally skip a run. That's an accepted trade-off for the free tier.
+
+on:
+  schedule:
+    - cron: '0 8 * * *'
+    - cron: '0 11 * * *'
+    - cron: '0 16 * * *'
+  workflow_dispatch: {}   # adds a "Run workflow" button for manual runs
+
+# Allow the job to push the updated state files back to the repo.
+permissions:
+  contents: write
+
+# Never let two runs overlap and fight over the commit.
+concurrency:
+  group: crypto-agent
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the bot (dry-run)
+        run: python main.py
+
+      - name: Commit updated paper-trading state
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No state changes to commit."
+          else
+            git commit -m "paper run $(date -u +'%Y-%m-%dT%H:%MZ')"
+            git push
+          fi

@@ -1,0 +1,7 @@
+# Pinned to the versions verified locally, so CI runs are reproducible.
+# Only requests + pyyaml are needed for dry-run; the other two are for live
+# trading (coinbase) and the optional AI filter (anthropic).
+requests==2.34.2
+PyYAML==6.0.3
+coinbase-advanced-py==1.8.3
+anthropic==0.109.1

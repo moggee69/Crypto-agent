@@ -1,0 +1,49 @@
+# ============================================================
+# AI Crypto Trading Agent — Configuration
+# ============================================================
+
+# SAFETY FIRST: dry_run = true means NO real trades are placed.
+# The agent logs what it WOULD do. Run in dry_run for at least
+# 2-4 weeks before ever setting this to false.
+dry_run: true
+
+# Trading universe
+universe:
+  top_n_by_market_cap: 20        # scan the top 20 coins
+  hold_top: 5                    # actually hold the 5 strongest
+  quote_currency: "USDC"         # main stablecoin: used for all pairs & the cash reserve
+  exclude: ["USDT", "USDC", "DAI", "WBTC", "STETH", "WETH", "USDS", "USD1"]  # skip stables & wrappers
+  # (newer/unknown stablecoins are also caught automatically by a price-peg heuristic)
+
+# Risk management (the most important section)
+risk:
+  total_capital_usdc: 500        # max capital the bot may touch
+  max_position_pct: 25           # no single coin > 25% of capital
+  cash_reserve_pct: 20           # always keep 20% in USDC
+  daily_loss_limit_pct: 5        # halt trading if down 5% in a day
+  min_trade_usd: 10              # skip dust-sized trades
+
+# Strategy: daily momentum rotation
+strategy:
+  momentum_weights:
+    pct_change_24h: 0.2
+    pct_change_7d: 0.5
+    pct_change_30d: 0.3
+  min_momentum_score: 0          # only hold coins with positive momentum;
+                                 # otherwise sit in USDC
+
+# Optional Claude AI overlay (sentiment/news sanity check)
+ai_analyst:
+  enabled: false                 # set true after adding ANTHROPIC_API_KEY
+  model: "claude-sonnet-4-20250514"
+  veto_threshold: "high_risk"    # AI can veto a buy it flags as high risk
+
+# Paper-trading simulation (only used when dry_run: true)
+paper:
+  state_file: "paper_portfolio.json"  # persisted simulated cash + holdings
+  fee_pct: 0.6                        # simulated taker fee per trade
+                                      # (Coinbase ~0.6% at small volume; fees compound)
+
+# Scheduling
+schedule:
+  run_time_utc: "00:15"          # once daily, just after UTC close
