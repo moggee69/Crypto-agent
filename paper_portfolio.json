@@ -5,19 +5,19 @@
   "holdings": {
     "RAIN": {
       "qty": 6931.8745513025315,
-      "last_price": 0.01440625
+      "last_price": 0.01440305
     },
     "HYPE": {
       "qty": 1.4437395924922032,
-      "last_price": 68.81
+      "last_price": 68.78
     },
     "XLM": {
       "qty": 469.19492178782536,
-      "last_price": 0.213154
+      "last_price": 0.21311
     },
     "LAB": {
       "qty": 6.771117166212535,
-      "last_price": 15.29
+      "last_price": 15.28
     }
   }
 }
