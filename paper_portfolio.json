@@ -5,11 +5,11 @@
   "holdings": {
     "RAIN": {
       "qty": 7943.722603570007,
-      "last_price": 0.01578636
+      "last_price": 0.01583716
     },
     "LAB": {
       "qty": 7.641358160962027,
-      "last_price": 16.35
+      "last_price": 15.86
     }
   }
 }
