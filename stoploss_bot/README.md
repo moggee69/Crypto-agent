@@ -63,7 +63,7 @@ Defaults (edit in `config.yaml`):
 
 | Setting | Default | Meaning |
 |---------|---------|---------|
-| `watchlist` | BTC, ETH, SOL (USD) | coins to watch & trade |
+| `watchlist` | XLM, HBAR, XRP, AVAX, LINK, ONDO, FLR, HYPE (USD) | coins to watch & trade |
 | `entry.dip_pct` | 3% | how far below the recent high to buy |
 | `entry.lookback_minutes` | 60 | window for that "recent high" |
 | `exit.trail_pct` | 5% | trailing-stop distance from the peak |
@@ -73,15 +73,59 @@ Defaults (edit in `config.yaml`):
 | `entry.rebuy_cooldown_minutes` | 30 | pause before re-buying after a stop |
 
 ## Step 4 — Go live (only after paper proves out)
-1. Create Coinbase **Advanced Trade** API keys: **View + Trade only, NEVER
-   Withdraw**. Restrict to your VPS IP if possible.
-2. Export them as env vars on the host (never commit them, never paste in chat):
-   ```bash
-   export COINBASE_API_KEY="organizations/xxx/apiKeys/xxx"
-   export COINBASE_API_SECRET="-----BEGIN EC PRIVATE KEY-----..."
-   ```
-3. Fund a small amount, set `risk.total_capital_usd` to match, set
-   `dry_run: false`, and watch it closely for the first few days.
+
+> **Going live is a deliberate, supervised step — not a switch you flip and walk
+> away from.** Once live, the bot places real market orders on Coinbase by
+> itself: it buys on a dip and sells on the trailing stop. You'll see those
+> trades in the Coinbase app, but the app shows *what* happened — the bot's
+> `bot.log` / `trades_log.csv` show *why* and what it's currently holding. Treat
+> the first few weeks as "running with supervision," and watch the bot's logs,
+> not just the app.
+
+### Pre-flight checklist
+- [ ] **Paper first.** Prove it actually makes money on paper for several weeks
+      (`equity_history.csv`). Paper always looks better than live.
+- [ ] **API keys:** create Coinbase **Advanced Trade** keys with **View + Trade
+      only — NEVER Withdraw**. Restrict to the VPS IP if possible. If a key
+      leaks, attackers still can't move your funds.
+- [ ] **Store keys on the host, never in the repo.** Use a root-only env file
+      read by systemd (see below) — don't `git commit` them, don't paste them
+      into chat.
+- [ ] **Fund in the right currency.** The watchlist uses `-USD` pairs, so the
+      account needs **USD** balance (not USDC) to buy with.
+- [ ] **Match the capital.** Set `risk.total_capital_usd` to what you actually
+      funded, and sanity-check `per_position_usd × max_positions` ≤ that.
+- [ ] **Start small** — a few hundred dollars you can afford to lose entirely.
+- [ ] **Set `dry_run: false`** and restart the service.
+- [ ] **Watch the first trades by hand** before trusting it unattended.
+
+### Wiring keys into the service (live)
+Create `/etc/stoploss-bot.env` (root-only) on the host:
+```bash
+COINBASE_API_KEY=organizations/xxx/apiKeys/xxx
+COINBASE_API_SECRET=-----BEGIN EC PRIVATE KEY-----...
+```
+```bash
+chmod 600 /etc/stoploss-bot.env
+```
+Add this line under `[Service]` in `/etc/systemd/system/stoploss-bot.service`,
+then `systemctl daemon-reload && systemctl restart stoploss-bot`:
+```ini
+EnvironmentFile=/etc/stoploss-bot.env
+```
+
+### Know these live-mode limitations before you rely on it
+- **The stop-loss lives in the bot, not on Coinbase.** If the Droplet or the feed
+  goes down while you hold a coin, nothing is watching it — you're unprotected
+  until it's back. Consider also placing a real stop order on Coinbase as a
+  backstop.
+- **The bot only manages positions *it* opened** — it tracks them in its own
+  state file, not by reading your Coinbase balance. **Don't manually trade the
+  watchlist coins in the app**, or the bot's view goes out of sync.
+- **No take-profit and no daily circuit-breaker by default.** A 5% trailing stop
+  on volatile coins will stop out often; each round trip costs ~1.2% in fees.
+- **The live execution path is intentionally simple** (estimates fill qty from
+  the last price). Review it and start with a small amount before scaling up.
 
 ## Step 5 — Run always-on (VPS)
 Use the included systemd unit (see comments at the top of
