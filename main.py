@@ -11,6 +11,7 @@ Cycle:
  5. Diff vs current holdings -> sells first, then buys
 """
 import sys
+from datetime import datetime, timezone
 
 import yaml
 
@@ -29,6 +30,17 @@ def _loss_limit_triggered(cur_equity, prev_equity, loss_limit_pct):
         return (False, 0.0)
     change_pct = (cur_equity - prev_equity) / prev_equity * 100
     return (change_pct <= -loss_limit_pct, change_pct)
+
+
+def _is_trading_day(day_ordinal, every_n_days):
+    """True on every Nth calendar day (every_n_days=1 means trade every day).
+
+    Uses the day's ordinal so the alternation is continuous across month and
+    year boundaries (no double/skip like a cron day-of-month rule would have).
+    """
+    if every_n_days <= 1:
+        return True
+    return day_ordinal % every_n_days == 0
 
 
 def main():
@@ -81,11 +93,20 @@ def main():
         ex.current_equity(prices), ex.reference_equity(24), loss_limit
     )
 
+    # Trade only every Nth calendar day (off-days still record an equity snapshot).
+    trade_every = cfg["strategy"].get("trade_every_n_days", 1)
+    is_trading_day = _is_trading_day(
+        datetime.now(timezone.utc).date().toordinal(), trade_every
+    )
+
     print("\nRebalancing:")
     if halted:
         print(f"  *** DAILY LOSS LIMIT HIT: equity {change_pct:+.2f}% vs ~24h ago "
               f"(limit -{loss_limit}%).")
         print("  *** Trading halted - holding all positions. Review before next run.")
+    elif not is_trading_day:
+        print(f"  Skipped - not a scheduled trading day (rebalancing every "
+              f"{trade_every} days). Holding positions.")
     else:
         traded = False
         for sym, held_usd in holdings.items():
