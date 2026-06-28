@@ -1,0 +1,49 @@
+# ============================================================
+# Real-time Trailing Stop-Loss Bot — Configuration
+# ============================================================
+
+# SAFETY FIRST: dry_run = true means NO real orders are sent. The bot keeps a
+# *simulated* portfolio and proves the strategy on paper. Run it like this for
+# weeks before ever setting dry_run: false. (Same discipline as the daily bot.)
+dry_run: true
+
+# Coins to watch & trade. Use Coinbase product ids (BASE-QUOTE). The public
+# price feed quotes these in USD; live orders use the same product ids.
+watchlist:
+  - "BTC-USD"
+  - "ETH-USD"
+  - "SOL-USD"
+
+# Capital & sizing
+risk:
+  total_capital_usd: 500       # max capital the bot may touch
+  max_positions: 3             # never hold more than this many coins at once
+  per_position_usd: 150        # capital committed per entry (0 = capital / max_positions)
+  min_trade_usd: 25            # skip trades smaller than this (dust / fee churn)
+
+# Entry: "buy the dip" relative to a recent rolling high
+entry:
+  dip_pct: 3.0                 # buy when price is this % below the recent high
+  lookback_minutes: 60         # window used to measure that recent high
+  rebuy_cooldown_minutes: 30   # after a stop-out, wait this long before re-entering the SAME coin
+
+# Exit: trailing stop from the peak price since entry
+exit:
+  trail_pct: 5.0               # sell if price falls this % below its peak since entry
+  take_profit_pct: 0           # optional hard take-profit from entry price (0 = off)
+
+# Price feed — Coinbase public market-data websocket (no API key required)
+feed:
+  ws_url: "wss://ws-feed.exchange.coinbase.com"
+  channel: "ticker"
+  staleness_timeout_s: 90      # force a reconnect if no message arrives for this long
+
+# Paper-trading simulation (only used when dry_run: true)
+paper:
+  state_file: "paper_portfolio.json"   # persisted simulated cash + positions
+  fee_pct: 0.6                         # simulated taker fee per trade (~Coinbase small-volume)
+
+# Housekeeping / logging
+log:
+  equity_snapshot_seconds: 300   # append an equity_history.csv row at most this often
+  heartbeat_seconds: 60          # print a status line at most this often

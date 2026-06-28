@@ -1,0 +1,32 @@
+# systemd unit for the always-on trailing stop-loss bot.
+#
+# Install on a small Linux VPS:
+#   sudo cp deploy/stoploss-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now stoploss-bot
+#   journalctl -u stoploss-bot -f          # follow the logs
+#
+# Adjust WorkingDirectory/ExecStart to wherever you checked the repo out.
+# Leave the COINBASE_* lines commented for paper/dry-run (no keys needed).
+
+[Unit]
+Description=Crypto real-time trailing stop-loss bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/stoploss-bot
+ExecStart=/opt/stoploss-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+
+# Live keys — uncomment ONLY when going live. View + Trade scope, never Withdraw.
+# Environment=COINBASE_API_KEY=organizations/xxx/apiKeys/xxx
+# Environment=COINBASE_API_SECRET=-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----\n
+
+StandardOutput=append:/opt/stoploss-bot/bot.log
+StandardError=append:/opt/stoploss-bot/bot.log
+
+[Install]
+WantedBy=multi-user.target
