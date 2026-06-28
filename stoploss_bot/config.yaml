@@ -10,9 +10,14 @@ dry_run: true
 # Coins to watch & trade. Use Coinbase product ids (BASE-QUOTE). The public
 # price feed quotes these in USD; live orders use the same product ids.
 watchlist:
-  - "BTC-USD"
-  - "ETH-USD"
-  - "SOL-USD"
+  - "XLM-USD"
+  - "HBAR-USD"
+  - "XRP-USD"
+  - "AVAX-USD"
+  - "LINK-USD"
+  - "ONDO-USD"
+  - "FLR-USD"
+  - "HYPE-USD"
 
 # Capital & sizing
 risk:
