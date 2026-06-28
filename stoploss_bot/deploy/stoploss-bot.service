@@ -1,12 +1,16 @@
 # systemd unit for the always-on trailing stop-loss bot.
 #
+# Assumes the repo is cloned to /opt/crypto-agent (so the bot is at
+# /opt/crypto-agent/stoploss_bot) with a venv created inside that folder.
+# Adjust the paths below if you clone somewhere else.
+#
 # Install on a small Linux VPS:
 #   sudo cp deploy/stoploss-bot.service /etc/systemd/system/
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now stoploss-bot
-#   journalctl -u stoploss-bot -f          # follow the logs
+#   tail -f /opt/crypto-agent/stoploss_bot/bot.log   # watch the bot's output
+#   journalctl -u stoploss-bot -f                    # watch the SERVICE (start/stop/crash)
 #
-# Adjust WorkingDirectory/ExecStart to wherever you checked the repo out.
 # Leave the COINBASE_* lines commented for paper/dry-run (no keys needed).
 
 [Unit]
@@ -16,8 +20,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/stoploss-bot
-ExecStart=/opt/stoploss-bot/venv/bin/python bot.py
+WorkingDirectory=/opt/crypto-agent/stoploss_bot
+# -u keeps Python's stdout unbuffered so bot.log updates in real time
+# (without it, print() output sits in a buffer and the log looks empty/stale).
+ExecStart=/opt/crypto-agent/stoploss_bot/venv/bin/python -u bot.py
 Restart=always
 RestartSec=10
 
@@ -25,8 +31,8 @@ RestartSec=10
 # Environment=COINBASE_API_KEY=organizations/xxx/apiKeys/xxx
 # Environment=COINBASE_API_SECRET=-----BEGIN EC PRIVATE KEY-----\n...\n-----END EC PRIVATE KEY-----\n
 
-StandardOutput=append:/opt/stoploss-bot/bot.log
-StandardError=append:/opt/stoploss-bot/bot.log
+StandardOutput=append:/opt/crypto-agent/stoploss_bot/bot.log
+StandardError=append:/opt/crypto-agent/stoploss_bot/bot.log
 
 [Install]
 WantedBy=multi-user.target
