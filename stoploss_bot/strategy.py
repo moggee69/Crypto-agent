@@ -19,6 +19,20 @@ def entry_signal(price: float, window_high: float | None, dip_pct: float) -> boo
     return drawdown_pct >= dip_pct
 
 
+def trend_ok(price: float, moving_avg: float | None) -> bool:
+    """Trend gate for entries: only buy a dip when the coin is also trending up,
+    i.e. the current price is above its moving average. This keeps the bot out of
+    "falling knife" dip-buys during a downtrend — the single change that most
+    improved the strategy in backtests across both choppy and trending markets.
+
+    `moving_avg` is None until the average has warmed up; we stay out (return
+    False) rather than guess on missing data.
+    """
+    if moving_avg is None:
+        return False
+    return price > moving_avg
+
+
 def exit_signal(price: float, entry_price: float, peak_price: float,
                 trail_pct: float, take_profit_pct: float = 0) -> tuple[bool, str]:
     """Return (should_exit, reason)."""

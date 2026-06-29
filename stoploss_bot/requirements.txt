@@ -1,6 +1,8 @@
 # Pinned for reproducible installs.
-# PyYAML + websocket-client are all that dry-run (paper) needs.
+# PyYAML + websocket-client + requests are all that dry-run (paper) needs
+# (requests warms the trend MA from REST candles on startup).
 # coinbase-advanced-py is only used for LIVE order execution.
 PyYAML==6.0.3
 websocket-client==1.8.0
+requests==2.34.2
 coinbase-advanced-py==1.8.3

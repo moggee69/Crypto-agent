@@ -31,6 +31,12 @@ entry:
   dip_pct: 3.0                 # buy when price is this % below the recent high
   lookback_minutes: 60         # window used to measure that recent high
   rebuy_cooldown_minutes: 30   # after a stop-out, wait this long before re-entering the SAME coin
+  # Trend filter: only buy a dip when the coin is ALSO trending up (price above
+  # its moving average). Keeps the bot out of "falling knife" entries during
+  # downtrends; backtested far better than the plain dip-buy in choppy markets.
+  trend_filter:
+    enabled: true
+    ma_hours: 12               # moving-average window that defines "the trend"
 
 # Exit: trailing stop from the peak price since entry
 exit:
