@@ -5,19 +5,19 @@
   "holdings": {
     "RAIN": {
       "qty": 7943.722603570007,
-      "last_price": 0.01573164
+      "last_price": 0.01574186
     },
     "LAB": {
       "qty": 8.103355621629483,
-      "last_price": 13.45
+      "last_price": 13.79
     },
     "HYPE": {
       "qty": 1.4960866947621916,
-      "last_price": 64.64
+      "last_price": 64.38
     },
     "SOL": {
       "qty": 1.3197026022304834,
-      "last_price": 73.33
+      "last_price": 73.31
     }
   }
 }
