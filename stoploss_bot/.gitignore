@@ -6,6 +6,10 @@ __pycache__/
 # Runtime log (when run under systemd / nohup)
 bot.log
 
+# Minute-bar price database (accumulates on the server; download with scp).
+# The logging CODE is tracked; the growing DATA is not.
+minute_data/
+
 # NOTE: paper_portfolio.json, equity_history.csv and trades_log.csv are
 # intentionally NOT ignored — they are the paper-trading track record and
 # should be committed so the simulation persists across restarts.

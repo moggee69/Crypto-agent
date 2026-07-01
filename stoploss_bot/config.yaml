@@ -60,3 +60,11 @@ paper:
 log:
   equity_snapshot_seconds: 300   # append an equity_history.csv row at most this often
   heartbeat_seconds: 60          # print a status line at most this often
+
+# Minute-bar price database — aggregates the live tick stream into one OHLC row
+# per minute per coin, appended to <dir>/<PRODUCT>.csv. Run backfill_minute_data.py
+# once to include history from before logging started. Data files are gitignored
+# (they grow large); download them from the server with scp.
+data_log:
+  enabled: true
+  dir: "minute_data"

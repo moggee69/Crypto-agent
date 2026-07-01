@@ -28,6 +28,7 @@ import yaml
 
 import strategy
 from feed import TickerFeed
+from minute_logger import MinuteLogger
 from portfolio import Portfolio
 
 EXCHANGE_CANDLES = "https://api.exchange.coinbase.com/products/{}/candles"
@@ -59,6 +60,13 @@ class StopLossBot:
         self.ma_samples = {p: deque() for p in self.products}   # (minute_epoch, price)
         self.ma_sum = {p: 0.0 for p in self.products}
         self.last_ma_minute: dict[str, int | None] = {p: None for p in self.products}
+
+        # Minute-bar logger — builds a growing local price database (optional).
+        self.data_cfg = cfg.get("data_log", {})
+        self.minute_logger = (
+            MinuteLogger(self.data_cfg.get("dir", "minute_data"), self.products)
+            if self.data_cfg.get("enabled", False) else None
+        )
 
         self._last_equity_snap = 0.0
         self._last_heartbeat = 0.0
@@ -98,6 +106,9 @@ class StopLossBot:
     def on_price(self, product: str, price: float, now: float | None = None):
         wall = time.time() if now is None else now
         self.last_price[product] = price
+
+        if self.minute_logger:
+            self.minute_logger.on_tick(product, wall, price)
 
         win = self.windows[product]
         win.append((wall, price))
@@ -207,6 +218,8 @@ class StopLossBot:
         def shutdown(signum, frame):
             print("\n[bot] shutting down - saving state...")
             feed.stop()
+            if self.minute_logger:
+                self.minute_logger.flush_all()
             self.pf.save()
             sys.exit(0)
 
@@ -224,6 +237,8 @@ class StopLossBot:
         if self.trend_enabled:
             print("Warming up from recent history...")
             self._seed_history()
+        if self.minute_logger:
+            print(f"Minute-data logging ON -> {self.data_cfg.get('dir', 'minute_data')}/")
         print()
         feed.run()
 
