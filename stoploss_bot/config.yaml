@@ -40,7 +40,9 @@ entry:
 
 # Exit: trailing stop from the peak price since entry
 exit:
-  trail_pct: 5.0               # sell if price falls this % below its peak since entry
+  trail_pct: 10.0              # sell if price falls this % below its peak since entry
+                               # (widened from 5%: swing analysis showed the median
+                               # pullback is ~8.6%, so 5% whipsawed out of normal dips)
   take_profit_pct: 0           # optional hard take-profit from entry price (0 = off)
 
 # Price feed — Coinbase public market-data websocket (no API key required)
