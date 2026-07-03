@@ -5,23 +5,23 @@
   "holdings": {
     "SOL": {
       "qty": 1.3197026022304834,
-      "last_price": 81.23
+      "last_price": 81.18
     },
     "WBT": {
       "qty": 1.451624680540343,
-      "last_price": 56.08
+      "last_price": 56.03
     },
     "BCH": {
       "qty": 0.3713458485103204,
-      "last_price": 227.29
+      "last_price": 227.04
     },
     "HYPE": {
       "qty": 1.129866439329355,
-      "last_price": 70.38
+      "last_price": 69.97
     },
     "ADA": {
       "qty": 464.2907188565556,
-      "last_price": 0.171272
+      "last_price": 0.172556
     }
   }
 }
