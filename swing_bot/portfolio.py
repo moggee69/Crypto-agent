@@ -70,7 +70,7 @@ class Portfolio:
         self.state["fees_paid"] += fee
         self._log_trade("BUY", product, usd, f"@ {price:.6g} {note} fee {fee:.2f}")
         print(f"  BUY  {product:<10} ${usd:,.2f} @ {price:,.6g}  ({note})")
-        notify.push("🟢 Swing bot BUY",
+        notify.push("Swing bot BUY",
                     f"{product}  ${usd:,.2f} @ {price:.6g}\n{note}", tags="green_circle")
         self.save()
 
@@ -86,7 +86,7 @@ class Portfolio:
         self.state["fees_paid"] += fee
         self._log_trade("SELL", product, gross, f"@ {price:.6g} {note} pnl {pnl:+.2f} fee {fee:.2f}")
         print(f"  SELL {product:<10} ${gross:,.2f} @ {price:,.6g}  ({note}, P&L {pnl:+.2f})")
-        notify.push("🔴 Swing bot SELL",
+        notify.push("Swing bot SELL",
                     f"{product}  ${gross:,.2f} @ {price:.6g}\nP&L {pnl:+.2f}  ({note})", tags="red_circle")
         self.save()
 
