@@ -1,0 +1,13 @@
+# Local venv and caches
+venv/
+__pycache__/
+*.pyc
+
+# Runtime log
+bot.log
+
+# Runtime paper state lives on the server (avoids git-pull conflicts).
+# Download it with scp if you want a local copy.
+swing_portfolio.json
+swing_trades.csv
+swing_equity.csv

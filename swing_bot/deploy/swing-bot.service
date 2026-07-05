@@ -1,0 +1,27 @@
+# systemd unit for the swing bot (dip-buy + trend-break-exit), paper mode.
+#
+# Install on the VPS (assumes the repo is at /opt/crypto-agent):
+#   sudo cp deploy/swing-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now swing-bot
+#   tail -f /opt/crypto-agent/swing_bot/bot.log        # watch it
+#   journalctl -u swing-bot -f                         # watch the service
+#
+# It polls Coinbase's public candle API, so no API keys are needed for paper.
+
+[Unit]
+Description=Crypto swing bot (dip-buy + trend-break exit, paper)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/crypto-agent/swing_bot
+ExecStart=/opt/crypto-agent/swing_bot/venv/bin/python -u bot.py
+Restart=always
+RestartSec=15
+StandardOutput=append:/opt/crypto-agent/swing_bot/bot.log
+StandardError=append:/opt/crypto-agent/swing_bot/bot.log
+
+[Install]
+WantedBy=multi-user.target

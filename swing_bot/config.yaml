@@ -1,0 +1,47 @@
+# ============================================================
+# Swing Bot — dip-buy + trend-break-exit strategy
+# ============================================================
+# Buys real dips once they turn back up, rides the run, and exits when the
+# trend breaks (price closes below its short moving average). Paper by default.
+
+dry_run: true
+
+watchlist:
+  - "XLM-USD"
+  - "HBAR-USD"
+  - "XRP-USD"
+  - "AVAX-USD"
+  - "LINK-USD"
+  - "ONDO-USD"
+  - "FLR-USD"
+  - "HYPE-USD"
+
+capital:
+  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+
+# BUY (locked strategy):
+#   Wait for 2-4 red daily candles, then buy on the green turn (momentum swings up).
+#   If it keeps falling PAST `extended_fall_days`, drop to the 4-hour chart and
+#   buy the first green 4h candle (catch the turn without waiting a full day).
+entry:
+  min_red_candles: 2
+  max_red_candles: 4
+  extended_fall_days: 4
+  # INSURANCE: only buy when the coin is in a broader uptrend (price above its
+  # `uptrend_ma_days`-day average). Stops it buying into a confirmed downtrend —
+  # the one scenario that wrecked the strategy in backtests. Turn off to buy
+  # every qualifying dip regardless of the bigger trend.
+  insurance_uptrend_filter:
+    enabled: true
+    uptrend_ma_days: 30
+
+# SELL: exit when the daily close drops below its `ma_exit_days`-day average.
+# A trend break, not a fixed % — rides runs, steps out when momentum rolls over.
+# (7-day was the backtest sweet spot.)
+exit:
+  ma_exit_days: 7
+
+# Runtime
+poll_seconds: 900          # check for newly-completed candles every 15 min
+fee_pct: 0.6               # simulated taker fee (paper)
+state_file: "swing_portfolio.json"
