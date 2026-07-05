@@ -93,11 +93,14 @@ def main():
         ex.current_equity(prices), ex.reference_equity(24), loss_limit
     )
 
-    # Trade only every Nth calendar day (off-days still record an equity snapshot).
+    # Trade only every Nth calendar day, and only on the FIRST run of that day.
+    # Later runs still record an equity snapshot but place no trades (kills the
+    # intraday round-tripping that was driving fees).
     trade_every = cfg["strategy"].get("trade_every_n_days", 1)
     is_trading_day = _is_trading_day(
         datetime.now(timezone.utc).date().toordinal(), trade_every
     )
+    first_run_today = not ex.ran_today()
 
     print("\nRebalancing:")
     if halted:
@@ -107,6 +110,9 @@ def main():
     elif not is_trading_day:
         print(f"  Skipped - not a scheduled trading day (rebalancing every "
               f"{trade_every} days). Holding positions.")
+    elif not first_run_today:
+        print("  Skipped - already rebalanced earlier today "
+              "(one rebalance per trading day). Holding positions.")
     else:
         traded = False
         for sym, held_usd in holdings.items():

@@ -123,6 +123,19 @@ class Executor:
         ref = aged[-1] if aged else rows[0]
         return float(ref["equity"])
 
+    def ran_today(self) -> bool:
+        """True if an equity snapshot has already been recorded today (UTC).
+
+        Used to enforce one rebalance per day: the first run of the day sees no
+        today-row yet and trades; later runs see it and skip trading.
+        """
+        if not os.path.exists(EQUITY_FILE):
+            return False
+        today = datetime.now(timezone.utc).date().isoformat()
+        with open(EQUITY_FILE, newline="") as f:
+            return any(r["timestamp_utc"].startswith(today)
+                       for r in csv.DictReader(f))
+
     def mark_price(self, symbol: str, prices: dict[str, float]) -> float | None:
         """Best available price for a coin: the current scan price, or — when a
         holding has dropped out of the top-N scan — the last price we marked it
