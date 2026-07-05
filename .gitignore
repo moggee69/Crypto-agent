@@ -9,6 +9,14 @@ agent.log
 # Local editor/assistant config
 .claude/
 
+# Server credentials — NEVER commit (repo is public)
+stoploss_bot/server connect.txt
+
+# Local market data + sync artifacts (large / regenerable, not for the repo)
+minute_data/
+historical_data/
+minute_data_sync.log
+
 # NOTE: paper_portfolio.json, equity_history.csv and trades_log.csv are
 # intentionally NOT ignored — they are the paper-trading state and must be
 # committed so the simulation persists between scheduled runs.
