@@ -5,23 +5,23 @@
   "holdings": {
     "WBT": {
       "qty": 1.451624680540343,
-      "last_price": 56.74
+      "last_price": 57.31
     },
     "ADA": {
       "qty": 464.2907188565556,
-      "last_price": 0.188625
+      "last_price": 0.183604
     },
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 462.62
+      "last_price": 446.98
     },
     "SOL": {
       "qty": 0.9801553062985332,
-      "last_price": 80.99
+      "last_price": 81.61
     },
     "GRAM": {
       "qty": 44.92655367231638,
-      "last_price": 1.77
+      "last_price": 1.79
     }
   }
 }
