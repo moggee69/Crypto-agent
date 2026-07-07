@@ -1,27 +1,27 @@
 {
   "start_capital": 500,
-  "cash_usdc": 77.37723474462678,
-  "fees_paid": 25.223886027954627,
+  "cash_usdc": 71.5078453660957,
+  "fees_paid": 26.1513545025309,
   "holdings": {
     "WBT": {
       "qty": 1.451624680540343,
-      "last_price": 57.76
+      "last_price": 56.9
     },
     "ADA": {
       "qty": 464.2907188565556,
-      "last_price": 0.185443
+      "last_price": 0.177866
     },
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 458.37
+      "last_price": 506.85
     },
     "SOL": {
       "qty": 0.9801553062985332,
-      "last_price": 82.93
+      "last_price": 82.32
     },
-    "GRAM": {
-      "qty": 44.92655367231638,
-      "last_price": 1.79
+    "BCH": {
+      "qty": 0.32579482137004256,
+      "last_price": 244.08
     }
   }
 }
