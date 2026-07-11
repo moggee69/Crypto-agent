@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 503.43
+      "last_price": 505.23
     },
     "SOL": {
       "qty": 0.9801553062985332,
-      "last_price": 77.94
+      "last_price": 78.42
     },
     "BCH": {
       "qty": 0.32579482137004256,
-      "last_price": 246.21
+      "last_price": 248.62
     },
     "HYPE": {
       "qty": 1.1828052952550943,
-      "last_price": 66.82
+      "last_price": 67.62
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1797.71
+      "last_price": 1809.58
     }
   }
 }
