@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 509.93
+      "last_price": 510.34
     },
     "BCH": {
       "qty": 0.32579482137004256,
-      "last_price": 236.29
+      "last_price": 235.62
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1769.99
+      "last_price": 1754.15
     },
     "RAIN": {
       "qty": 5498.430057162375,
-      "last_price": 0.01446231
+      "last_price": 0.01434883
     },
     "LEO": {
       "qty": 8.34417628541448,
-      "last_price": 9.53
+      "last_price": 9.52
     }
   }
 }
