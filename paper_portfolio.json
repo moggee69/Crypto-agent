@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 572.22
+      "last_price": 566.35
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1920.17
+      "last_price": 1924.74
     },
     "RAIN": {
       "qty": 5498.430057162375,
-      "last_price": 0.01454112
+      "last_price": 0.01445989
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.51
+      "last_price": 8.5
     },
     "WBT": {
       "qty": 1.402469135802469,
-      "last_price": 57.13
+      "last_price": 56.92
     }
   }
 }
