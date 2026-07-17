@@ -1,27 +1,23 @@
 {
   "start_capital": 500,
-  "cash_usdc": 54.62688260172973,
-  "fees_paid": 31.826841648822462,
+  "cash_usdc": 109.27258869366764,
+  "fees_paid": 33.36031673589654,
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 543.91
+      "last_price": 533.88
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1872.15
-    },
-    "RAIN": {
-      "qty": 5498.430057162375,
-      "last_price": 0.01444814
+      "last_price": 1835.34
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.38
+      "last_price": 8.18
     },
-    "WBT": {
-      "qty": 1.402469135802469,
-      "last_price": 56.08
+    "LEO": {
+      "qty": 10.142857142857142,
+      "last_price": 9.8
     }
   }
 }
