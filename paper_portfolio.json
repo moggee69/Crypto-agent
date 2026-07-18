@@ -5,19 +5,19 @@
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 546.88
+      "last_price": 540.04
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1843.64
+      "last_price": 1844.14
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.24
+      "last_price": 8.27
     },
     "LEO": {
       "qty": 10.142857142857142,
-      "last_price": 9.8
+      "last_price": 9.78
     }
   }
 }
