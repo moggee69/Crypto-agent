@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.172434729811779,
-      "last_price": 512.75
+      "last_price": 514.39
     },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1922.79
+      "last_price": 1945.34
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.61
+      "last_price": 8.7
     },
     "WBT": {
       "qty": 1.4124333925399646,
-      "last_price": 57.41
+      "last_price": 57.78
     },
     "ADA": {
       "qty": 454.0341781764407,
-      "last_price": 0.172414
+      "last_price": 0.179223
     }
   }
 }
