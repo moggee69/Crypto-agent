@@ -1,27 +1,27 @@
 {
   "start_capital": 500,
-  "cash_usdc": 49.66625634072648,
-  "fees_paid": 35.889212114047794,
+  "cash_usdc": 57.88247083981571,
+  "fees_paid": 36.90170435448495,
   "holdings": {
-    "ZEC": {
-      "qty": 0.172434729811779,
-      "last_price": 514.39
-    },
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1945.34
+      "last_price": 1925.1
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.7
+      "last_price": 8.63
     },
     "WBT": {
       "qty": 1.4124333925399646,
-      "last_price": 57.78
+      "last_price": 57.29
     },
     "ADA": {
       "qty": 454.0341781764407,
-      "last_price": 0.179223
+      "last_price": 0.174124
+    },
+    "XMR": {
+      "qty": 0.22288244856774483,
+      "last_price": 356.78
     }
   }
 }
