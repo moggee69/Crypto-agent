@@ -5,23 +5,23 @@
   "holdings": {
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1855.57
+      "last_price": 1857.25
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.28
+      "last_price": 8.31
     },
     "WBT": {
       "qty": 1.4124333925399646,
-      "last_price": 55.73
+      "last_price": 55.8
     },
     "XMR": {
       "qty": 0.22288244856774483,
-      "last_price": 367.32
+      "last_price": 364.77
     },
     "LTC": {
       "qty": 1.7332170880557976,
-      "last_price": 45.88
+      "last_price": 45.86
     }
   }
 }
