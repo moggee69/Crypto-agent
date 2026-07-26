@@ -1,7 +1,8 @@
 """Coinbase public market-data websocket feed (no API key required).
 
 Subscribes to the `ticker` channel on Coinbase's public Exchange feed and calls
-`on_price(product_id, price)` on every price update. It auto-reconnects on drop
+`on_price(product_id, price, size)` on every price update (size = last trade
+size, used for volume logging). It auto-reconnects on drop
 or staleness so the bot can run unattended for weeks. Only public market data is
 used here — order execution lives in portfolio.py and uses the authenticated
 Advanced Trade REST API instead.
@@ -41,8 +42,9 @@ class TickerFeed:
             return
         product = msg.get("product_id")
         price = msg.get("price")
+        size = msg.get("last_size")
         if product and price is not None:
-            self.on_price(product, float(price))
+            self.on_price(product, float(price), float(size) if size else 0.0)
 
     def _on_error(self, ws, error):
         print(f"[feed] error: {error}")

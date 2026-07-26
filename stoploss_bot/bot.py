@@ -103,12 +103,13 @@ class StopLossBot:
         return self.ma_sum[product] / len(dq)
 
     # ---------- per-tick handler ----------
-    def on_price(self, product: str, price: float, now: float | None = None):
+    def on_price(self, product: str, price: float, size: float = 0.0,
+                 now: float | None = None):
         wall = time.time() if now is None else now
         self.last_price[product] = price
 
         if self.minute_logger:
-            self.minute_logger.on_tick(product, wall, price)
+            self.minute_logger.on_tick(product, wall, price, size)
 
         win = self.windows[product]
         win.append((wall, price))

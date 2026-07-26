@@ -32,7 +32,8 @@ def _load(path: str) -> dict:
             for row in r:
                 if len(row) >= 5:
                     try:
-                        bars[int(datetime.fromisoformat(row[0]).timestamp())] = row[1:5]
+                        # pad old 5-col (no volume) rows to [o, h, l, c, vol]
+                        bars[int(datetime.fromisoformat(row[0]).timestamp())] = (row[1:6] + [""])[:5]
                     except ValueError:
                         pass
     return bars
@@ -55,8 +56,10 @@ def backfill(product: str, start: datetime, directory: str):
                 if r.status_code == 200:
                     for t, lo, hi, op, cl, vol in r.json():
                         if t not in bars:
-                            bars[t] = [op, hi, lo, cl]
+                            bars[t] = [op, hi, lo, cl, vol]
                             added += 1
+                        elif bars[t][4] in ("", None):
+                            bars[t][4] = vol        # fill volume on existing rows, keep their OHLC
                     break
             except Exception:
                 pass
@@ -65,10 +68,10 @@ def backfill(product: str, start: datetime, directory: str):
         time.sleep(0.15)
     with open(path, "w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["minute_utc", "open", "high", "low", "close"])
+        w.writerow(["minute_utc", "open", "high", "low", "close", "volume"])
         for t in sorted(bars):
-            o, h, l, c = bars[t]
-            w.writerow([datetime.fromtimestamp(t, timezone.utc).isoformat(), o, h, l, c])
+            o, h, l, c, vol = bars[t]
+            w.writerow([datetime.fromtimestamp(t, timezone.utc).isoformat(), o, h, l, c, vol])
     return len(bars), added
 
 
