@@ -10,7 +10,7 @@
 # It polls Coinbase's public candle API, so no API keys are needed for paper.
 
 [Unit]
-Description=Crypto swing bot (dip-buy + trend-break exit, paper)
+Description=Position Trader Agent 002 (crypto swing bot: dip-buy + trend-break exit, paper)
 After=network-online.target
 Wants=network-online.target
 

@@ -103,7 +103,7 @@ def main():
 
     mode = "DRY RUN (paper)" if cfg.get("dry_run", True) else "LIVE"
     ins = cfg["entry"]["insurance_uptrend_filter"]
-    print(f"=== Swing Bot | {mode} ===")
+    print(f"=== Position Trader Agent 002  ·  swing (dip-buy / trend-break)  |  {mode} ===")
     print(f"Watching: {', '.join(products)}")
     print(f"Buy: {cfg['entry']['min_red_candles']}-{cfg['entry']['max_red_candles']} red "
           f"then green turn (4h fallback past {cfg['entry']['extended_fall_days']}d)  |  "
