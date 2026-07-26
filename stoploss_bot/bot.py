@@ -18,6 +18,7 @@ All ticks are handled on the single feed thread, so trading logic needs no
 locking. The only other thread is the feed's staleness watchdog, which just
 closes the socket to trigger a reconnect.
 """
+import os
 import signal
 import sys
 import time
@@ -30,6 +31,9 @@ import strategy
 from feed import TickerFeed
 from minute_logger import MinuteLogger
 from portfolio import Portfolio
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shared"))
+import risk_guard  # noqa: E402  (shared module, resolved via the path insert above)
 
 EXCHANGE_CANDLES = "https://api.exchange.coinbase.com/products/{}/candles"
 
@@ -60,6 +64,11 @@ class StopLossBot:
         self.ma_samples = {p: deque() for p in self.products}   # (minute_epoch, price)
         self.ma_sum = {p: 0.0 for p in self.products}
         self.last_ma_minute: dict[str, int | None] = {p: None for p in self.products}
+
+        # Risk guards (StoplossGuard + MaxDrawdown) and the liquidity pairlist
+        # filter — all optional, config-driven, and entry-only (never force a trade).
+        self.guard = risk_guard.RiskGuard(cfg.get("protections"))
+        self.liquidity_cfg = cfg.get("liquidity")
 
         # Minute-bar logger — builds a growing local price database (optional).
         self.data_cfg = cfg.get("data_log", {})
@@ -137,7 +146,9 @@ class StopLossBot:
             self.exit["trail_pct"], self.exit.get("take_profit_pct", 0),
         )
         if should_exit:
-            self.pf.close_position(product, price, reason)
+            pnl = self.pf.close_position(product, price, reason)
+            if pnl is not None:
+                self.guard.record_exit(time.time(), pnl)   # feeds the StoplossGuard
 
     def _maybe_enter(self, product: str, price: float, high: float | None):
         if self.pf.num_positions() >= self.risk["max_positions"]:
@@ -148,6 +159,18 @@ class StopLossBot:
         if self.trend_enabled and not strategy.trend_ok(price, self._moving_avg(product)):
             return
         if not strategy.entry_signal(price, high, self.entry["dip_pct"]):
+            return
+        # A buy is otherwise imminent — apply the risk guards last (the two below
+        # are the only place they run, so their cost stays off the per-tick path).
+        blocked = self.guard.entry_block_reason(
+            time.time(), self.pf.equity(self.last_price),
+            self.pf.state.get("peak_equity", self.pf.state["start_capital"]))
+        if blocked:
+            print(f"  [guard] entry halted: {blocked}")
+            return
+        ok, why = risk_guard.liquidity_ok(product, self.liquidity_cfg)
+        if not ok:
+            print(f"  [guard] skip {product}: {why}")
             return
         usd = self._per_position_usd()
         if self.pf.dry_run:

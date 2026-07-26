@@ -45,6 +45,28 @@ exit:
                                # pullback is ~8.6%, so 5% whipsawed out of normal dips)
   take_profit_pct: 0           # optional hard take-profit from entry price (0 = off)
 
+# Risk protections (ported from Freqtrade's plugin patterns). These only ever
+# BLOCK new entries — they can never open, close, or resize a position — so they
+# can only make the bot more cautious. All optional and independently toggleable.
+protections:
+  # Pause new entries after a burst of losing exits (a bad-regime circuit-breaker).
+  stoploss_guard:
+    enabled: true
+    lookback_hours: 24          # window to count recent losses over
+    trade_limit: 3              # halt entries once this many losing exits fall in the window
+    required_profit_usd: 0.0    # an exit counts as "losing" when its P&L <= this
+  # Halt new entries while total equity sits this far below its all-time peak.
+  max_drawdown:
+    enabled: true
+    max_drawdown_pct: 20        # e.g. 20 = stop buying once down 20% from the high-water mark
+
+# Liquidity pairlist filter — skip an entry when the coin is too thin or its
+# bid/ask spread is too wide (checked only when a buy is otherwise imminent).
+liquidity:
+  enabled: true
+  min_24h_volume_usd: 2000000   # need at least this much 24h USD volume to enter
+  max_spread_pct: 0.6           # skip if the bid/ask spread is wider than this %
+
 # Price feed — Coinbase public market-data websocket (no API key required)
 feed:
   ws_url: "wss://ws-feed.exchange.coinbase.com"

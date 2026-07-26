@@ -59,6 +59,7 @@ class Portfolio:
         return {
             "start_capital": cap,
             "cash_usd": cap,
+            "peak_equity": cap,      # high-water mark, for the MaxDrawdown guard
             "fees_paid": 0.0,
             # product -> {qty, entry_price, peak_price, last_price, opened_at, cost_usd}
             "positions": {},
@@ -120,22 +121,24 @@ class Portfolio:
         self.save()
         return True
 
-    def close_position(self, product: str, price: float, reason: str):
+    def close_position(self, product: str, price: float, reason: str) -> float | None:
+        """Close a position and return the realised P&L in USD (None if no such
+        position). The P&L lets the caller feed the StoplossGuard."""
         pos = self.state["positions"].get(product)
         if not pos:
-            return
+            return None
+        gross = pos["qty"] * price
+        fee = gross * self.fee_pct / 100
+        pnl = (gross - fee) - pos.get("cost_usd", gross)
         if self.dry_run:
-            gross = pos["qty"] * price
-            fee = gross * self.fee_pct / 100
             self.state["cash_usd"] += gross - fee
             self.state["fees_paid"] += fee
-            pnl = (gross - fee) - pos.get("cost_usd", gross)
             _log_trade("SELL", product, round(gross, 2), True,
                        f"{reason} pnl {pnl:+.2f} fee {fee:.2f}")
             print(f"  [DRY RUN] SELL {product}  ${gross:,.2f} @ {price:,.6g}  "
                   f"({reason}, P&L {pnl:+.2f}, fee ${fee:.2f})")
         else:
-            _log_trade("SELL", product, round(pos["qty"] * price, 2), False, reason)
+            _log_trade("SELL", product, round(gross, 2), False, reason)
             self.client.market_order_sell(
                 client_order_id=str(uuid.uuid4()),
                 product_id=product,
@@ -149,10 +152,13 @@ class Portfolio:
                 datetime.now(timezone.utc) + timedelta(minutes=cooldown)
             ).isoformat()
         self.save()
+        return pnl
 
     # ---------- equity snapshot (same columns as the parent bot) ----------
     def log_equity_snapshot(self, prices: dict[str, float]):
         equity = self.equity(prices)
+        self.state["peak_equity"] = max(self.state.get("peak_equity",
+                                        self.state["start_capital"]), equity)
         cash = self.state["cash_usd"]
         holdings_value = equity - cash
         start = self.state["start_capital"]

@@ -14,6 +14,7 @@ systemd; safe to restart — it only ever acts on the latest completed candle.
 Usage:
     python bot.py
 """
+import os
 import signal
 import sys
 import time
@@ -24,11 +25,18 @@ import data
 import strategy
 from portfolio import Portfolio
 
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "shared"))
+import risk_guard  # noqa: E402  (shared module, resolved via the path insert above)
+
 DAILY = 86400
 
 
-def process_coin(product, st, daily, h4, cfg, pf):
-    """Apply the strategy to one coin given its recent candles."""
+def process_coin(product, st, daily, h4, cfg, pf, guard, liquidity_cfg,
+                 now, equity_now, peak_equity):
+    """Apply the strategy to one coin given its recent candles.
+
+    Entries pass through the shared risk guards (StoplossGuard / MaxDrawdown /
+    liquidity) via `cleared_to_buy`; exits feed realised P&L back to the guard."""
     if not daily:
         return
     exit_n = cfg["exit"]["ma_exit_days"]
@@ -38,16 +46,30 @@ def process_coin(product, st, daily, h4, cfg, pf):
     ma_long = strategy.sma(daily, ins["uptrend_ma_days"]) if ins.get("enabled") else None
     latest = daily[-1]
 
+    def cleared_to_buy() -> bool:
+        blocked = guard.entry_block_reason(now, equity_now, peak_equity)
+        if blocked:
+            print(f"  [guard] entry halted: {blocked}")
+            return False
+        ok, why = risk_guard.liquidity_ok(product, liquidity_cfg)
+        if not ok:
+            print(f"  [guard] skip {product}: {why}")
+            return False
+        return True
+
     # ---- daily candle close: exit check, then entry check ----
     if latest["t"] > st["last_daily_ts"]:
         if st["holding"]:
             if ma_exit is not None and latest["c"] < ma_exit:
-                pf.sell(product, st, latest["c"], f"ma{exit_n}-break")
+                pnl = pf.sell(product, st, latest["c"], f"ma{exit_n}-break")
+                if pnl is not None:
+                    guard.record_exit(now, pnl)
         else:
             if strategy.is_green(latest):
                 reds = strategy.red_run_ending(daily, len(daily) - 2)  # reds before the green
                 if ecfg["min_red_candles"] <= reds <= ecfg["max_red_candles"] \
-                        and strategy.insurance_ok(ins, ma_long, latest["c"]):
+                        and strategy.insurance_ok(ins, ma_long, latest["c"]) \
+                        and cleared_to_buy():
                     pf.buy(product, st, latest["c"], f"daily-turn ({reds} red)")
         st["last_daily_ts"] = latest["t"]
 
@@ -57,7 +79,8 @@ def process_coin(product, st, daily, h4, cfg, pf):
         if cur_reds > ecfg["extended_fall_days"]:
             l4 = h4[-1]
             if l4["t"] > st["last_4h_ts"]:
-                if strategy.is_green(l4) and strategy.insurance_ok(ins, ma_long, l4["c"]):
+                if strategy.is_green(l4) and strategy.insurance_ok(ins, ma_long, l4["c"]) \
+                        and cleared_to_buy():
                     pf.buy(product, st, l4["c"], f"4h-fallback ({cur_reds} red days)")
                 st["last_4h_ts"] = l4["t"]
 
@@ -67,6 +90,8 @@ def main():
         cfg = yaml.safe_load(f)
     pf = Portfolio(cfg)
     products = cfg["watchlist"]
+    guard = risk_guard.RiskGuard(cfg.get("protections"))
+    liquidity_cfg = cfg.get("liquidity")
 
     def shutdown(signum, frame):
         print("\n[bot] shutting down - saving state...")
@@ -86,7 +111,11 @@ def main():
     print(f"Insurance uptrend filter: {'ON (>%dd MA)' % ins['uptrend_ma_days'] if ins.get('enabled') else 'OFF'}")
     print(f"Polling every {cfg['poll_seconds']}s\n", flush=True)
 
+    last_prices: dict[str, float] = {}
     while True:
+        now = time.time()
+        equity_now = pf.equity(last_prices)      # from the previous cycle's prices
+        peak_equity = pf.state.get("peak_equity", pf.state["start_capital"])
         prices = {}
         for product in products:
             st = pf.coin_state(product)
@@ -96,9 +125,11 @@ def main():
                 prices[product] = h4[-1]["c"]
             elif daily:
                 prices[product] = daily[-1]["c"]
-            process_coin(product, st, daily, h4, cfg, pf)
+            process_coin(product, st, daily, h4, cfg, pf, guard, liquidity_cfg,
+                         now, equity_now, peak_equity)
         pf.save()
         eq = pf.log_equity(prices)
+        last_prices = prices
         held = [p for p, s in pf.state["coins"].items() if s["holding"]]
         print(f"[hb] equity ${eq:,.2f} | holding: {', '.join(held) or 'flat'}", flush=True)
         time.sleep(cfg["poll_seconds"])

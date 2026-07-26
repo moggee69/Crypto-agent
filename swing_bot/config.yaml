@@ -41,6 +41,24 @@ entry:
 exit:
   ma_exit_days: 7
 
+# Risk protections (ported from Freqtrade's plugin patterns). Entry-only — they
+# can only BLOCK a buy, never open/close/resize — so they only add caution.
+protections:
+  stoploss_guard:
+    enabled: true
+    lookback_hours: 72          # swing trades are slower, so use a wider window than the stoploss bot
+    trade_limit: 3              # halt entries after this many losing exits in the window
+    required_profit_usd: 0.0    # an exit counts as "losing" when its P&L <= this
+  max_drawdown:
+    enabled: true
+    max_drawdown_pct: 20        # stop buying once equity is 20% below its high-water mark
+
+# Liquidity pairlist filter — skip thin/wide-spread coins (checked only at buy time).
+liquidity:
+  enabled: true
+  min_24h_volume_usd: 2000000
+  max_spread_pct: 0.6
+
 # Runtime
 poll_seconds: 900          # check for newly-completed candles every 15 min
 fee_pct: 0.6               # simulated taker fee (paper)

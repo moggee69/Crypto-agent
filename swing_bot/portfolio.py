@@ -36,6 +36,7 @@ class Portfolio:
         return {
             "start_capital": total,
             "per_coin": per,
+            "peak_equity": total,   # high-water mark, for the MaxDrawdown guard
             "fees_paid": 0.0,
             "coins": {p: {"cash": per, "holding": False, "qty": 0.0,
                           "buy_price": 0.0, "cost_usd": 0.0,
@@ -74,9 +75,9 @@ class Portfolio:
                     f"{product}  ${usd:,.2f} @ {price:.6g}\n{note}", tags="green_circle")
         self.save()
 
-    def sell(self, product, st, price, note):
+    def sell(self, product, st, price, note) -> float | None:
         if not st["holding"]:
-            return
+            return None
         gross = st["qty"] * price
         fee = gross * self.fee / 100
         pnl = (gross - fee) - st["cost_usd"]
@@ -89,6 +90,7 @@ class Portfolio:
         notify.push("Swing bot SELL",
                     f"{product}  ${gross:,.2f} @ {price:.6g}\nP&L {pnl:+.2f}  ({note})", tags="red_circle")
         self.save()
+        return pnl
 
     def equity(self, prices: dict) -> float:
         total = 0.0
@@ -101,6 +103,7 @@ class Portfolio:
     def log_equity(self, prices: dict) -> float:
         eq = self.equity(prices)
         start = self.state["start_capital"]
+        self.state["peak_equity"] = max(self.state.get("peak_equity", start), eq)
         new = not os.path.exists(EQUITY)
         with open(EQUITY, "a", newline="") as f:
             w = csv.writer(f)
