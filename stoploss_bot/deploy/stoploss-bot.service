@@ -14,7 +14,7 @@
 # Leave the COINBASE_* lines commented for paper/dry-run (no keys needed).
 
 [Unit]
-Description=Crypto real-time trailing stop-loss bot
+Description=Bear to Bull Agent 001 (crypto real-time trailing stop-loss bot)
 After=network-online.target
 Wants=network-online.target
 

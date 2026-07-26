@@ -251,7 +251,7 @@ class StopLossBot:
         signal.signal(signal.SIGTERM, shutdown)
 
         mode = "DRY RUN (paper)" if self.cfg["dry_run"] else "LIVE TRADING"
-        print(f"=== Trailing Stop-Loss Bot | {mode} ===")
+        print(f"=== Bear to Bull Agent 001  ·  trailing stop-loss  |  {mode} ===")
         print(f"Watching: {', '.join(self.products)}")
         trend = (f"trend filter ON (price > {self.trend_cfg.get('ma_hours', 12)}h MA)"
                  if self.trend_enabled else "trend filter OFF")
