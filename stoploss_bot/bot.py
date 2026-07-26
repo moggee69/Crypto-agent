@@ -326,7 +326,7 @@ class StopLossBot:
         signal.signal(signal.SIGTERM, shutdown)
 
         mode = "DRY RUN (paper)" if self.cfg["dry_run"] else "LIVE TRADING"
-        print(f"=== Bear to Bull Agent 001  ·  trailing stop-loss  |  {mode} ===")
+        print(f"=== Trending Volatile Agent 001  ·  trending top-10 / trailing stop  |  {mode} ===")
         if self.dynamic:
             print(f"Universe: DYNAMIC top-{self.uni_cfg.get('size', 10)} trending "
                   f"(rank {self.uni_cfg.get('rank_by', 'gain_24h')}, "
