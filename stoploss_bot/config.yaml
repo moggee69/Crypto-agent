@@ -7,8 +7,10 @@
 # weeks before ever setting dry_run: false. (Same discipline as the daily bot.)
 dry_run: true
 
-# Coins to watch & trade. Use Coinbase product ids (BASE-QUOTE). The public
-# price feed quotes these in USD; live orders use the same product ids.
+# Watchlist — Coinbase product ids (BASE-QUOTE, quoted in USD). In dynamic
+# universe mode (below) this is NO LONGER the trade list: it's the minute-data
+# logging set (keeps the price database stable) and the fallback if trending
+# selection ever fails. In fixed mode it IS the trade list.
 watchlist:
   - "XLM-USD"
   - "HBAR-USD"
@@ -18,6 +20,21 @@ watchlist:
   - "ONDO-USD"
   - "FLR-USD"
   - "HYPE-USD"
+
+# Trading universe — which coins the bot may OPEN new positions in.
+#   mode: "fixed"            -> trade the watchlist above (original behaviour)
+#         "dynamic_trending" -> trade the top-N trending Coinbase USD pairs,
+#                               re-picked every `refresh_minutes`.
+# Ranked by 24h gain but only among coins clearing the volume floor, so thin
+# flash-pumps are screened out. Held positions are ALWAYS managed to their normal
+# trailing-stop exit even after a coin drops out of the list — only new entries
+# are gated to the current universe.
+universe:
+  mode: "dynamic_trending"
+  size: 10                       # trade the top 10
+  rank_by: "gain_24h"            # "gain_24h" (trending up) or "volume_24h" (most active)
+  min_24h_volume_usd: 5000000    # only rank coins with at least this much 24h $ volume
+  refresh_minutes: 120           # re-pick the list this often
 
 # Capital & sizing
 risk:

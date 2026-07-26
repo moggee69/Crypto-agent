@@ -21,13 +21,15 @@ closes the socket to trigger a reconnect.
 import os
 import signal
 import sys
+import threading
 import time
-from collections import deque
+from collections import defaultdict, deque
 from datetime import datetime, timezone
 
 import yaml
 
 import strategy
+import universe
 from feed import TickerFeed
 from minute_logger import MinuteLogger
 from portfolio import Portfolio
@@ -54,16 +56,31 @@ class StopLossBot:
         self.lookback_s = self.lookback_minutes * 60
         # rolling (epoch_time, price) window per product, for the entry high.
         # Epoch (not monotonic) time so it can be pre-seeded from REST history.
-        self.windows = {p: deque() for p in self.products}
+        # defaultdicts so a coin entering a dynamic universe self-initialises on
+        # its first tick (CPython dict ops are atomic under the GIL, so the
+        # refresh thread adding keys is safe alongside the feed thread).
+        self.windows = defaultdict(deque)
         self.last_price: dict[str, float] = {}
 
         # Trend filter: a per-product moving average sampled once per minute.
         self.trend_cfg = self.entry.get("trend_filter", {})
         self.trend_enabled = bool(self.trend_cfg.get("enabled", False))
         self.ma_minutes = int(self.trend_cfg.get("ma_hours", 12) * 60)
-        self.ma_samples = {p: deque() for p in self.products}   # (minute_epoch, price)
-        self.ma_sum = {p: 0.0 for p in self.products}
-        self.last_ma_minute: dict[str, int | None] = {p: None for p in self.products}
+        self.ma_samples = defaultdict(deque)                    # (minute_epoch, price)
+        self.ma_sum = defaultdict(float)
+        self.last_ma_minute: dict[str, int | None] = defaultdict(lambda: None)
+
+        # Trading universe. "fixed" = trade the watchlist; "dynamic_trending" =
+        # trade the top-N trending Coinbase pairs, refreshed periodically. The
+        # watchlist stays the minute-logging set (keeps the price DB stable) and
+        # the fallback if universe selection ever fails.
+        self.uni_cfg = cfg.get("universe", {})
+        self.dynamic = self.uni_cfg.get("mode") == "dynamic_trending"
+        self.data_log_products = set(self.products)
+        self.universe: set[str] = set(self.products)            # dynamic mode replaces this on first refresh
+        self.feed = None
+        self._seeded: set[str] = set()
+        self._stop_refresh = False
 
         # Risk guards (StoplossGuard + MaxDrawdown) and the liquidity pairlist
         # filter — all optional, config-driven, and entry-only (never force a trade).
@@ -71,6 +88,7 @@ class StopLossBot:
         self.liquidity_cfg = cfg.get("liquidity")
 
         # Minute-bar logger — builds a growing local price database (optional).
+        # Always logs the fixed watchlist, independent of the trading universe.
         self.data_cfg = cfg.get("data_log", {})
         self.minute_logger = (
             MinuteLogger(self.data_cfg.get("dir", "minute_data"), self.products)
@@ -117,7 +135,7 @@ class StopLossBot:
         wall = time.time() if now is None else now
         self.last_price[product] = price
 
-        if self.minute_logger:
+        if self.minute_logger and product in self.data_log_products:
             self.minute_logger.on_tick(product, wall, price, size)
 
         win = self.windows[product]
@@ -151,6 +169,8 @@ class StopLossBot:
                 self.guard.record_exit(time.time(), pnl)   # feeds the StoplossGuard
 
     def _maybe_enter(self, product: str, price: float, high: float | None):
+        if product not in self.universe:      # only OPEN new positions in the current universe
+            return
         if self.pf.num_positions() >= self.risk["max_positions"]:
             return
         if self.pf.in_cooldown(product):
@@ -191,11 +211,11 @@ class StopLossBot:
             print(f"[hb] equity ${eq:,.2f} | positions: {held}")
 
     # ---------- startup warm-up ----------
-    def _seed_history(self):
+    def _seed_products(self, products):
         """Best-effort: pre-fill the dip window and trend MA from recent 1-min
-        REST candles so the bot is effective right after a (re)start instead of
-        waiting ~the MA window to warm up. Safe to fail — on any error it simply
-        warms naturally from the live feed."""
+        REST candles so a coin is effective as soon as it's traded instead of
+        waiting ~the MA window to warm up. Used at startup and whenever a new coin
+        enters the dynamic universe. Safe to fail — it then warms from the feed."""
         try:
             import requests
         except Exception:
@@ -204,7 +224,7 @@ class StopLossBot:
         need_min = self.lookback_minutes + 5
         if self.trend_enabled:
             need_min = max(need_min, self.ma_minutes + 5)
-        for p in self.products:
+        for p in products:
             try:
                 end = time.time()
                 cur = end - need_min * 60
@@ -230,17 +250,72 @@ class StopLossBot:
                 print(f"[seed] {p}: {len(candles)} candles ({state})")
             except Exception as e:
                 print(f"[seed] {p}: skipped ({e})")
+            self._seeded.add(p)
+
+    # ---------- dynamic universe ----------
+    def _held(self) -> set[str]:
+        """Currently-held products, snapshotted safely against the feed thread."""
+        for _ in range(3):
+            try:
+                return set(self.pf.state["positions"].keys())
+            except RuntimeError:                      # dict changed size mid-iteration
+                time.sleep(0.05)
+        return set()
+
+    def _subscribe_set(self) -> set[str]:
+        # Stay subscribed to: the trading universe + anything we still hold (so
+        # dropped-out positions are still managed to exit) + the data-log watchlist.
+        return set(self.universe) | self._held() | self.data_log_products
+
+    def _compute_universe(self) -> set[str]:
+        """Re-pick the trending universe, seed any newly-added coins, and return
+        the full product set to stay subscribed to."""
+        top = universe.select_trending(self.cfg, list(self.products))
+        self.universe = {d["id"] for d in top}
+        fresh = [c for c in self.universe if c not in self._seeded]
+        if fresh:
+            self._seed_products(fresh)
+        print("[universe] top {}: {}".format(len(top),
+              ", ".join(f"{d['id']}({d['gain']:+.0f}%)" for d in top)), flush=True)
+        return self._subscribe_set()
+
+    def _refresh_loop(self):
+        interval = self.uni_cfg.get("refresh_minutes", 120) * 60
+        while not self._stop_refresh:
+            slept = 0
+            while slept < interval and not self._stop_refresh:
+                time.sleep(min(5, interval - slept))
+                slept += 5
+            if self._stop_refresh:
+                break
+            try:
+                subscribe = self._compute_universe()
+                if self.feed:
+                    added, removed = self.feed.set_products(sorted(subscribe))
+                    if added or removed:
+                        print(f"[universe] feed +{len(added)} -{len(removed)} "
+                              f"(now {len(subscribe)} subscribed)", flush=True)
+            except Exception as e:
+                print(f"[universe] refresh error: {e}", flush=True)
 
     # ---------- run ----------
     def run(self):
+        if self.dynamic:
+            print("Selecting initial trending universe...")
+            init_products = sorted(self._compute_universe())
+        else:
+            init_products = list(self.products)
+
         feed = TickerFeed(
-            self.cfg["feed"]["ws_url"], self.products, self.on_price,
+            self.cfg["feed"]["ws_url"], init_products, self.on_price,
             channel=self.cfg["feed"].get("channel", "ticker"),
             staleness_timeout_s=self.cfg["feed"].get("staleness_timeout_s", 90),
         )
+        self.feed = feed
 
         def shutdown(signum, frame):
             print("\n[bot] shutting down - saving state...")
+            self._stop_refresh = True
             feed.stop()
             if self.minute_logger:
                 self.minute_logger.flush_all()
@@ -252,17 +327,28 @@ class StopLossBot:
 
         mode = "DRY RUN (paper)" if self.cfg["dry_run"] else "LIVE TRADING"
         print(f"=== Bear to Bull Agent 001  ·  trailing stop-loss  |  {mode} ===")
-        print(f"Watching: {', '.join(self.products)}")
+        if self.dynamic:
+            print(f"Universe: DYNAMIC top-{self.uni_cfg.get('size', 10)} trending "
+                  f"(rank {self.uni_cfg.get('rank_by', 'gain_24h')}, "
+                  f"vol >= ${self.uni_cfg.get('min_24h_volume_usd', 0):,.0f}, "
+                  f"refresh {self.uni_cfg.get('refresh_minutes', 120)}m)")
+            print(f"Now trading: {', '.join(sorted(self.universe))}")
+            print(f"Also logging watchlist: {', '.join(sorted(self.data_log_products))}")
+        else:
+            print(f"Watching: {', '.join(self.products)}")
         trend = (f"trend filter ON (price > {self.trend_cfg.get('ma_hours', 12)}h MA)"
                  if self.trend_enabled else "trend filter OFF")
         print(f"Entry: buy a {self.entry['dip_pct']}% dip vs the "
               f"{self.lookback_minutes}m high, {trend}  |  "
               f"Exit: {self.exit['trail_pct']}% trailing stop")
-        if self.trend_enabled:
+        if not self.dynamic and self.trend_enabled:
             print("Warming up from recent history...")
-            self._seed_history()
+            self._seed_products(self.products)
         if self.minute_logger:
             print(f"Minute-data logging ON -> {self.data_cfg.get('dir', 'minute_data')}/")
+        if self.dynamic:
+            threading.Thread(target=self._refresh_loop, daemon=True).start()
+            print(f"Universe refresh thread started (every {self.uni_cfg.get('refresh_minutes', 120)}m).")
         print()
         feed.run()
 

@@ -33,7 +33,30 @@ class TickerFeed:
             "product_ids": self.products,
             "channels": [self.channel],
         }))
-        print(f"[feed] connected - subscribed to {', '.join(self.products)}")
+        print(f"[feed] connected - subscribed to {len(self.products)} products")
+
+    def set_products(self, new_products):
+        """Swap the subscribed product set at runtime (for a dynamic universe).
+        Diffs against the current set and sends subscribe/unsubscribe frames on
+        the live socket. If the socket isn't open, the new set is stored and the
+        next (re)connect subscribes to it via _on_open."""
+        new = list(dict.fromkeys(new_products))          # de-dupe, preserve order
+        old = set(self.products)
+        added = [p for p in new if p not in old]
+        removed = [p for p in old if p not in new]
+        self.products = new
+        ws = self._ws
+        if ws and (added or removed):
+            try:
+                if added:
+                    ws.send(json.dumps({"type": "subscribe",
+                                        "product_ids": added, "channels": [self.channel]}))
+                if removed:
+                    ws.send(json.dumps({"type": "unsubscribe",
+                                        "product_ids": removed, "channels": [self.channel]}))
+            except Exception:
+                pass                                     # next reconnect resubscribes to self.products
+        return added, removed
 
     def _on_message(self, ws, message):
         self.last_msg_at = time.monotonic()
