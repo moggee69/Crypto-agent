@@ -5,23 +5,23 @@
   "holdings": {
     "ETH": {
       "qty": 0.04423405332339476,
-      "last_price": 1869.43
+      "last_price": 1850.41
     },
     "LINK": {
       "qty": 9.377358490566037,
-      "last_price": 8.34
+      "last_price": 8.27
     },
     "XMR": {
       "qty": 0.22288244856774483,
-      "last_price": 361.88
+      "last_price": 361.34
     },
     "ADA": {
       "qty": 485.92990925478927,
-      "last_price": 0.1881
+      "last_price": 0.188591
     },
     "BNB": {
       "qty": 0.13485508843929656,
-      "last_price": 583.21
+      "last_price": 581.49
     }
   }
 }
