@@ -5,23 +5,23 @@
   "holdings": {
     "XMR": {
       "qty": 0.22288244856774483,
-      "last_price": 416.78
+      "last_price": 412.43
     },
     "BNB": {
       "qty": 0.13176033934252385,
-      "last_price": 604.34
+      "last_price": 606.65
     },
     "LINK": {
       "qty": 9.108820160366552,
-      "last_price": 9.5
+      "last_price": 9.54
     },
     "TRX": {
       "qty": 238.56238562385622,
-      "last_price": 0.332377
+      "last_price": 0.329658
     },
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 59.64
+      "last_price": 59.15
     }
   }
 }
