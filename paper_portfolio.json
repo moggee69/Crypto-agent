@@ -5,23 +5,23 @@
   "holdings": {
     "LINK": {
       "qty": 9.108820160366552,
-      "last_price": 11.63
+      "last_price": 11.39
     },
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 74.9
+      "last_price": 74.56
     },
     "ETH": {
       "qty": 0.041871143031656094,
-      "last_price": 2407.23
+      "last_price": 2382.74
     },
     "SOL": {
       "qty": 0.9069343065693429,
-      "last_price": 91.97
+      "last_price": 90.98
     },
     "BTC": {
       "qty": 0.0011148966000701017,
-      "last_price": 77536
+      "last_price": 77522
     }
   }
 }
