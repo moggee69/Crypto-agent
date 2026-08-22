@@ -47,9 +47,16 @@ def process_coin(product, st, daily, h4, cfg, pf, guard, liquidity_cfg,
     latest = daily[-1]
 
     def cleared_to_buy() -> bool:
-        blocked = guard.entry_block_reason(now, equity_now, peak_equity)
+        sl = guard.stoploss_halt(now)
+        if sl:
+            print(f"  [guard] entry halted: {sl}")
+            return False
+        blocked, reason, hu, pk = guard.drawdown_check(
+            now, equity_now, peak_equity, pf.state.get("dd_halt_until", 0.0))
+        pf.state["peak_equity"] = pk
+        pf.state["dd_halt_until"] = hu
         if blocked:
-            print(f"  [guard] entry halted: {blocked}")
+            print(f"  [guard] entry halted: {reason}")
             return False
         ok, why = risk_guard.liquidity_ok(product, liquidity_cfg)
         if not ok:

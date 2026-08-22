@@ -66,20 +66,34 @@ class RiskGuard:
                     f"{g.get('lookback_hours', 24)}h (limit {g.get('trade_limit', 3)})")
         return None
 
-    def drawdown_halt(self, equity_now: float, peak_equity: float) -> str | None:
-        g = self._dd()
-        if not g.get("enabled"):
-            return None
-        if peak_equity and peak_equity > 0:
-            dd = (peak_equity - equity_now) / peak_equity * 100
-            if dd >= g.get("max_drawdown_pct", 20):
-                return f"MaxDrawdown: {dd:.1f}% below peak (limit {g.get('max_drawdown_pct', 20)}%)"
-        return None
+    def drawdown_check(self, now: float, equity_now: float, peak_equity: float,
+                       halt_until: float) -> tuple[bool, str | None, float, float]:
+        """Pause-and-resume circuit breaker. Returns
+        (blocked, reason, new_halt_until, new_peak) — the caller persists the last
+        two into its state.
 
-    def entry_block_reason(self, now: float, equity_now: float,
-                           peak_equity: float) -> str | None:
-        """None = clear to enter; a string = why entries are halted right now."""
-        return self.stoploss_halt(now) or self.drawdown_halt(equity_now, peak_equity)
+        When equity falls `max_drawdown_pct` below its high-water mark, entries
+        pause for `cooldown_hours`. When that cooldown elapses the peak baseline is
+        RESET to current equity, so the bot resumes from a fresh high-water mark
+        instead of being locked out forever (the old bug: an all-time peak that
+        never reset meant one bad run bricked the bot permanently)."""
+        g = self._dd()
+        peak = max(peak_equity or 0.0, equity_now)
+        if not g.get("enabled"):
+            return (False, None, 0.0, peak)
+        limit = g.get("max_drawdown_pct", 20)
+        cooldown_h = g.get("cooldown_hours", 12)
+        if halt_until:
+            if now < halt_until:
+                return (True, f"MaxDrawdown cooldown — {int((halt_until - now) / 60)}m left",
+                        halt_until, peak)
+            return (False, None, 0.0, equity_now)         # cooldown done: reset baseline, resume
+        if peak > 0:
+            dd = (peak - equity_now) / peak * 100
+            if dd >= limit:
+                return (True, f"MaxDrawdown {dd:.1f}% >= {limit}% — pausing {cooldown_h}h",
+                        now + cooldown_h * 3600, peak)
+        return (False, None, halt_until, peak)
 
 
 def liquidity_ok(product: str, cfg: dict | None) -> tuple[bool, str]:

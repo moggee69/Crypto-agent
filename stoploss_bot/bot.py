@@ -182,11 +182,19 @@ class StopLossBot:
             return
         # A buy is otherwise imminent — apply the risk guards last (the two below
         # are the only place they run, so their cost stays off the per-tick path).
-        blocked = self.guard.entry_block_reason(
-            time.time(), self.pf.equity(self.last_price),
-            self.pf.state.get("peak_equity", self.pf.state["start_capital"]))
+        now = time.time()
+        sl = self.guard.stoploss_halt(now)
+        if sl:
+            print(f"  [guard] entry halted: {sl}")
+            return
+        blocked, reason, hu, pk = self.guard.drawdown_check(
+            now, self.pf.equity(self.last_price),
+            self.pf.state.get("peak_equity", self.pf.state["start_capital"]),
+            self.pf.state.get("dd_halt_until", 0.0))
+        self.pf.state["peak_equity"] = pk
+        self.pf.state["dd_halt_until"] = hu
         if blocked:
-            print(f"  [guard] entry halted: {blocked}")
+            print(f"  [guard] entry halted: {reason}")
             return
         ok, why = risk_guard.liquidity_ok(product, self.liquidity_cfg)
         if not ok:

@@ -52,6 +52,7 @@ protections:
   max_drawdown:
     enabled: true
     max_drawdown_pct: 20        # stop buying once equity is 20% below its high-water mark
+    cooldown_hours: 12          # then PAUSE this long and resume from a reset baseline
 
 # Liquidity pairlist filter — skip thin/wide-spread coins (checked only at buy time).
 liquidity:

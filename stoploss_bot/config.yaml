@@ -76,6 +76,8 @@ protections:
   max_drawdown:
     enabled: true
     max_drawdown_pct: 20        # e.g. 20 = stop buying once down 20% from the high-water mark
+    cooldown_hours: 12          # then PAUSE this long and resume from a reset baseline
+                                # (not a permanent lockout)
 
 # Liquidity pairlist filter — skip an entry when the coin is too thin or its
 # bid/ask spread is too wide (checked only when a buy is otherwise imminent).
