@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 80.13
+      "last_price": 81.38
     },
     "ZEC": {
       "qty": 0.10183382850117816,
-      "last_price": 838.23
+      "last_price": 805.74
     },
     "XRP": {
       "qty": 53.01333333333333,
-      "last_price": 1.48
+      "last_price": 1.47
     },
     "WBT": {
       "qty": 1.1041377395168008,
-      "last_price": 73.22
+      "last_price": 73.19
     },
     "ETH": {
       "qty": 0.0324302720602929,
-      "last_price": 2477.78
+      "last_price": 2476.11
     }
   }
 }
