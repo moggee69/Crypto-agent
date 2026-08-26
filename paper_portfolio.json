@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 82.27
+      "last_price": 82.81
     },
     "ZEC": {
       "qty": 0.10183382850117816,
-      "last_price": 786.97
+      "last_price": 789.66
     },
     "XRP": {
       "qty": 53.01333333333333,
-      "last_price": 1.44
+      "last_price": 1.41
     },
     "WBT": {
       "qty": 1.1041377395168008,
-      "last_price": 72.9
+      "last_price": 72.68
     },
     "RAIN": {
       "qty": 4519.280825109743,
-      "last_price": 0.01759572
+      "last_price": 0.01759137
     }
   }
 }
