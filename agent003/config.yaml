@@ -1,0 +1,58 @@
+# ============================================================
+# Position Trader Agent 003 — MACD/RSI swing (majors + liquid alts)
+# ============================================================
+# A duplicate of Agent 002's strategy on a different coin set. Runs the SAME code
+# (swing_bot/bot.py) with this config and its own state folder — so any strategy
+# change to Agent 002 automatically applies here too.
+
+dry_run: true
+display_name: "Position Trader Agent 003"   # shown in the banner + push alerts
+
+watchlist:
+  - "BTC-USD"
+  - "SOL-USD"
+  - "ETH-USD"
+  - "ZEC-USD"
+  - "ADA-USD"
+  - "SUI-USD"
+  - "LTC-USD"
+  - "ICP-USD"
+
+capital:
+  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+
+# BUY: MACD line crosses ABOVE its signal line (momentum turning up) while RSI is
+# below rsi_buy_max — i.e. buy a dip that's turning, don't chase strength.
+# Indicators are standard: MACD 12/26/9, RSI 14 (daily candles).
+entry:
+  rsi_buy_max: 40           # only buy when RSI is below this (buy the dip-turn)
+
+# SELL: once RSI has reached rsi_overbought since entry (a run has overheated),
+# sell when price fades trail_pct from its peak. NO downside stop — it holds
+# through pullbacks and only exits after a hot run rolls over.
+exit:
+  rsi_overbought: 75        # arm the sell once RSI reaches this
+  trail_pct: 10             # then sell when price fades this % off its peak
+
+# Risk protections — entry-only, can only BLOCK a buy.
+protections:
+  stoploss_guard:
+    enabled: true
+    lookback_hours: 72
+    trade_limit: 3
+    required_profit_usd: 0.0
+  max_drawdown:
+    enabled: true
+    max_drawdown_pct: 20
+    cooldown_hours: 12
+
+# Liquidity pairlist filter — skip thin/wide-spread coins (checked only at buy time).
+liquidity:
+  enabled: true
+  min_24h_volume_usd: 2000000
+  max_spread_pct: 0.6
+
+# Runtime
+poll_seconds: 900
+fee_pct: 0.6
+state_file: "swing_portfolio.json"

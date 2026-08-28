@@ -6,6 +6,7 @@
 # then fades. Settings chosen from full-history backtests (2019+). Paper by default.
 
 dry_run: true
+display_name: "Position Trader Agent 002"   # shown in the banner + push alerts
 
 watchlist:
   - "XLM-USD"

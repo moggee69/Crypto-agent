@@ -1,0 +1,26 @@
+# systemd unit for Position Trader Agent 003 (MACD/RSI swing, paper).
+#
+# Runs the SAME code as Agent 002 (swing_bot/bot.py) but from this folder, so it
+# reads agent003/config.yaml and writes its own state here. Install on the VPS:
+#   sudo cp /opt/crypto-agent/agent003/agent003-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now agent003-bot
+#   tail -f /opt/crypto-agent/agent003/bot.log
+
+[Unit]
+Description=Position Trader Agent 003 (MACD/RSI swing, majors + liquid alts, paper)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/crypto-agent/agent003
+ExecStart=/opt/crypto-agent/swing_bot/venv/bin/python -u /opt/crypto-agent/swing_bot/bot.py
+Restart=always
+RestartSec=15
+EnvironmentFile=-/etc/swing-bot.env
+StandardOutput=append:/opt/crypto-agent/agent003/bot.log
+StandardError=append:/opt/crypto-agent/agent003/bot.log
+
+[Install]
+WantedBy=multi-user.target
