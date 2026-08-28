@@ -3,11 +3,11 @@ bought 2026-07-15, peak/armed seeded, + equity curve for the dashboard (SL slot)
 import json, sys, os
 from datetime import datetime, timezone
 
-sys.path.insert(0, r"C:\Users\RyanMorgan\OneDrive - Curve Workplaces Ltd\Documents\Trading Bot\swing_bot")
+import _paths                       # puts swing_bot/ on sys.path, resolves DATA_DIR
 import agent002_macd_rsi_backtest as bt
 import strategy
 
-OUT = r"C:\Users\RYANMO~1\AppData\Local\Temp\claude\C--Users-RyanMorgan-OneDrive---Curve-Workplaces-Ltd-Documents-Trading-Bot\30f7b07b-7394-4615-908d-fbd835cc453c\scratchpad"
+OUT = _paths.DATA_DIR
 COINS = ["BTC", "SOL", "ETH", "ZEC", "ADA", "SUI", "LTC", "ICP"]
 WATCH = [c + "-USD" for c in COINS]
 ENTRY = datetime(2026, 7, 15, tzinfo=timezone.utc).timestamp()

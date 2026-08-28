@@ -23,15 +23,21 @@ private Claude Artifact (claude.ai/code/artifacts); this is the source + pipelin
 
 ## How the dashboard updates
 
-1. (optional) pull each bot's live `swing_portfolio.json` / `swing_trades.csv` /
-   `swing_equity.csv` from the droplet into the working dir as `{sw,sl,a4}_*`.
+1. Put each bot's data files in the data dir (default `dashboard/data/`) as
+   `{sw,sl,a4}_portfolio.json` / `_trades.csv` / `_equity.csv` — either pull the
+   droplet's live `swing_*` files, or regenerate them with the scripts below.
 2. `python build_dash.py` → rewrites `dashboard.html` with fresh data.
 3. Re-publish `dashboard.html` as the Claude Artifact (same URL).
 
-## ⚠️ Paths are machine-specific
+Regenerate the deploy bundles locally instead of pulling from the droplet:
+`python sim_backfill.py` (writes `sw_*` + `sl_*`), then `python agent004_baseline.py`
+and `python agent004_bundle.py` (write `a4_*`).
 
-These scripts have **absolute paths hardcoded** to the machine they were written on
-(a temp scratchpad dir + the local repo path). Before running them on another
-machine, update the `OUT` / `SC` / `sys.path` constants near the top of each script
-to point at wherever you keep `dashboard.html` and the bots' data files. The logic
-is portable; only the paths need changing.
+## Paths are portable — no edits needed
+
+All scripts import **`_paths.py`**, which resolves everything relative to the repo:
+it adds `../swing_bot` to `sys.path` and points `DASH_HTML` at `dashboard.html` and
+`DATA_DIR` at `dashboard/data/`. So a fresh `git clone` runs as-is on any machine —
+just install the deps (`requests`, `pyyaml`). To read the bots' data from somewhere
+else, set the `DASH_DATA` environment variable to that folder. The generated
+`data/` dir is git-ignored.

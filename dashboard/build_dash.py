@@ -1,11 +1,11 @@
 import json, re, time, os, sys, csv
-sys.path.insert(0, r"C:\Users\RyanMorgan\OneDrive - Curve Workplaces Ltd\Documents\Trading Bot\swing_bot")
+import _paths                       # puts swing_bot/ on sys.path, resolves DATA_DIR/DASH_HTML
 import strategy as swstrat
 from datetime import datetime, timezone, timedelta
 import requests
 
-OUT = r"C:\Users\RYANMO~1\AppData\Local\Temp\claude\C--Users-RyanMorgan-OneDrive---Curve-Workplaces-Ltd-Documents-Trading-Bot\30f7b07b-7394-4615-908d-fbd835cc453c\scratchpad\dashboard.html"
-SC = os.path.dirname(OUT)
+OUT = _paths.DASH_HTML          # the persistent dashboard source this rewrites
+SC = _paths.DATA_DIR            # the bots' live files ({tag}_portfolio.json / _trades.csv / _equity.csv)
 WATCH = ["XLM", "HBAR", "XRP", "AVAX", "LINK", "ONDO", "FLR", "HYPE"]   # Agent 002
 A3 = ["BTC", "SOL", "ETH", "ZEC", "ADA", "SUI", "LTC", "ICP"]          # Agent 003
 ALL = WATCH + A3

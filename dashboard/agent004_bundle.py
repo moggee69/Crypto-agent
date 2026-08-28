@@ -2,10 +2,10 @@
 dashboard has records to plot. Kept minimal — it only started today."""
 import json, csv, sys, os, time
 from datetime import datetime, timezone
-sys.path.insert(0, r"C:\Users\RyanMorgan\OneDrive - Curve Workplaces Ltd\Documents\Trading Bot\swing_bot")
+import _paths                       # puts swing_bot/ on sys.path, resolves DATA_DIR
 import agent002_macd_rsi_backtest as bt
 
-OUT = r"C:\Users\RYANMO~1\AppData\Local\Temp\claude\C--Users-RyanMorgan-OneDrive---Curve-Workplaces-Ltd-Documents-Trading-Bot\30f7b07b-7394-4615-908d-fbd835cc453c\scratchpad"
+OUT = _paths.DATA_DIR
 FEE = 0.006
 iso = lambda t: datetime.fromtimestamp(t, timezone.utc).isoformat()
 port = json.load(open(os.path.join(OUT, "a4_portfolio.json")))

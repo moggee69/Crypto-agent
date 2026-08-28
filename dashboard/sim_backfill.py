@@ -5,11 +5,11 @@ makes the July->now trades the bot's actual live history, continuing forward."""
 import json, csv, sys, os
 from datetime import datetime, timezone
 
-sys.path.insert(0, r"C:\Users\RyanMorgan\OneDrive - Curve Workplaces Ltd\Documents\Trading Bot\swing_bot")
+import _paths                       # puts swing_bot/ on sys.path, resolves DATA_DIR
 import agent002_macd_rsi_backtest as bt
 import strategy as st
 
-OUT_DIR = r"C:\Users\RYANMO~1\AppData\Local\Temp\claude\C--Users-RyanMorgan-OneDrive---Curve-Workplaces-Ltd-Documents-Trading-Bot\30f7b07b-7394-4615-908d-fbd835cc453c\scratchpad"
+OUT_DIR = _paths.DATA_DIR
 ENTRY_DAY = int(datetime(2026, 7, 15, tzinfo=timezone.utc).timestamp()) // 86400 * 86400
 CAP, FEE = 500.0, 0.006
 RSI_BUY, RSI_OB, TRAIL = 40, 75, 0.10
