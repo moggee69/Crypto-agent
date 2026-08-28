@@ -39,8 +39,8 @@ class Portfolio:
             "peak_equity": total,   # high-water mark, for the MaxDrawdown guard
             "fees_paid": 0.0,
             "coins": {p: {"cash": per, "holding": False, "qty": 0.0,
-                          "buy_price": 0.0, "cost_usd": 0.0,
-                          "last_daily_ts": 0, "last_4h_ts": 0} for p in coins},
+                          "buy_price": 0.0, "cost_usd": 0.0, "peak_price": 0.0,
+                          "armed": False, "last_daily_ts": 0, "last_4h_ts": 0} for p in coins},
         }
 
     def coin_state(self, product: str) -> dict:

@@ -1,37 +1,51 @@
-"""Pure decision helpers for the swing strategy.
+"""Decision helpers for the MACD/RSI swing strategy (pure, side-effect-free).
 
-Kept side-effect-free so the exact same logic can be replayed over history to
-validate it, and run live in the bot.
+BUY  = MACD line crosses ABOVE its signal line (momentum turns up) while RSI is
+       below `rsi_buy_max` — buying a dip that's turning, not chasing strength.
+SELL = once RSI has been at/above `rsi_overbought` since entry (the position is
+       "armed"), sell when price fades `trail_pct` from its peak. No downside
+       stop — it holds through pullbacks and only exits after a run overheats.
 
-  BUY  = after 2-4 red daily candles, a green candle (the turn). If the fall
-         runs past `extended_fall_days`, buy the first green 4h candle instead.
-         Optional insurance: only buy when price is above its long MA (uptrend).
-  SELL = daily close drops below its short MA (`ma_exit_days`) — a trend break.
+Full-history backtests (2019+, through the 2021 bull and 2022 bear) picked
+RSI<40 / overbought 75 / 10% fade as the robust setting: buy real dips, ride
+the run a long time, exit only when it goes hot and then rolls over.
 """
 
 
-def is_green(candle: dict) -> bool:
-    return candle["c"] >= candle["o"]
+def ema(vals, n):
+    k = 2 / (n + 1)
+    out, e = [], None
+    for v in vals:
+        e = v if e is None else v * k + e * (1 - k)
+        out.append(e)
+    return out
 
 
-def red_run_ending(daily: list[dict], idx: int) -> int:
-    """Count consecutive red candles ending at index `idx` (inclusive)."""
-    n = 0
-    while idx >= 0 and daily[idx]["c"] < daily[idx]["o"]:
-        n += 1
-        idx -= 1
-    return n
+def macd_lines(closes, fast=12, slow=26, sig=9):
+    """Return (macd_line, signal_line) or (None, None) until there's enough data."""
+    if len(closes) < slow + sig:
+        return None, None
+    macd = [a - b for a, b in zip(ema(closes, fast), ema(closes, slow))]
+    return macd, ema(macd, sig)
 
 
-def sma(daily: list[dict], n: int) -> float | None:
-    """Simple moving average of the last n closes, or None until enough data."""
-    if len(daily) < n:
-        return None
-    return sum(d["c"] for d in daily[-n:]) / n
+def rsi(closes, n=14):
+    """Wilder's RSI. Returns a list aligned to `closes` (None until warmed up)."""
+    out = [None] * len(closes)
+    if len(closes) <= n:
+        return out
+    g = sum(max(closes[i] - closes[i - 1], 0) for i in range(1, n + 1)) / n
+    l = sum(max(closes[i - 1] - closes[i], 0) for i in range(1, n + 1)) / n
+    out[n] = 100 - 100 / (1 + (g / l if l else 999))
+    for i in range(n + 1, len(closes)):
+        d = closes[i] - closes[i - 1]
+        g = (g * (n - 1) + max(d, 0)) / n
+        l = (l * (n - 1) + max(-d, 0)) / n
+        out[i] = 100 - 100 / (1 + (g / l if l else 999))
+    return out
 
 
-def insurance_ok(ins_cfg: dict, ma_long: float | None, price: float) -> bool:
-    """Uptrend filter: True if disabled, or price is above its long MA."""
-    if not ins_cfg.get("enabled", False):
-        return True
-    return ma_long is not None and price > ma_long
+def macd_bull_cross(macd, signal):
+    """True if the MACD line crossed above its signal line on the latest bar."""
+    return (macd is not None and signal is not None and len(macd) >= 2
+            and macd[-2] <= signal[-2] and macd[-1] > signal[-1])

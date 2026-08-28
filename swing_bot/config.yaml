@@ -1,8 +1,9 @@
 # ============================================================
-# Swing Bot — dip-buy + trend-break-exit strategy
+# Position Trader Agent 002 — MACD/RSI swing strategy
 # ============================================================
-# Buys real dips once they turn back up, rides the run, and exits when the
-# trend breaks (price closes below its short moving average). Paper by default.
+# Buys a dip once momentum turns up (MACD bullish cross while RSI is low), holds
+# through pullbacks, and only exits after a run overheats (RSI >= overbought) and
+# then fades. Settings chosen from full-history backtests (2019+). Paper by default.
 
 dry_run: true
 
@@ -19,27 +20,19 @@ watchlist:
 capital:
   total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
 
-# BUY (locked strategy):
-#   Wait for 2-4 red daily candles, then buy on the green turn (momentum swings up).
-#   If it keeps falling PAST `extended_fall_days`, drop to the 4-hour chart and
-#   buy the first green 4h candle (catch the turn without waiting a full day).
+# BUY: MACD line crosses ABOVE its signal line (momentum turning up) while RSI is
+# below rsi_buy_max — i.e. buy a dip that's turning, don't chase strength.
+# Indicators are standard: MACD 12/26/9, RSI 14 (daily candles).
 entry:
-  min_red_candles: 2
-  max_red_candles: 4
-  extended_fall_days: 4
-  # INSURANCE: only buy when the coin is in a broader uptrend (price above its
-  # `uptrend_ma_days`-day average). Stops it buying into a confirmed downtrend —
-  # the one scenario that wrecked the strategy in backtests. Turn off to buy
-  # every qualifying dip regardless of the bigger trend.
-  insurance_uptrend_filter:
-    enabled: true
-    uptrend_ma_days: 30
+  rsi_buy_max: 40           # only buy when RSI is below this (buy the dip-turn)
 
-# SELL: exit when the daily close drops below its `ma_exit_days`-day average.
-# A trend break, not a fixed % — rides runs, steps out when momentum rolls over.
-# (7-day was the backtest sweet spot.)
+# SELL: once RSI has reached rsi_overbought since entry (a run has overheated),
+# sell when price fades trail_pct from its peak. NO downside stop — it holds
+# through pullbacks and only exits after a hot run rolls over. (Full-history
+# sweet spot: RSI<40 buy, overbought 75, 10% fade — "buy dips and ride long".)
 exit:
-  ma_exit_days: 7
+  rsi_overbought: 75        # arm the sell once RSI reaches this
+  trail_pct: 10             # then sell when price fades this % off its peak
 
 # Risk protections (ported from Freqtrade's plugin patterns). Entry-only — they
 # can only BLOCK a buy, never open/close/resize — so they only add caution.
