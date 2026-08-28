@@ -1,0 +1,22 @@
+# systemd unit for Top-8 Agent 004 (MACD/RSI swing, paper).
+# Runs the shared swing_bot/bot.py from this folder (own config + state).
+#   sudo cp /opt/crypto-agent/agent004/agent004-bot.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now agent004-bot
+
+[Unit]
+Description=Top-8 Agent 004 (MACD/RSI swing on the strongest 8 of 16, paper)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/crypto-agent/agent004
+ExecStart=/opt/crypto-agent/swing_bot/venv/bin/python -u /opt/crypto-agent/swing_bot/bot.py
+Restart=always
+RestartSec=15
+EnvironmentFile=-/etc/swing-bot.env
+StandardOutput=append:/opt/crypto-agent/agent004/bot.log
+StandardError=append:/opt/crypto-agent/agent004/bot.log
+
+[Install]
+WantedBy=multi-user.target

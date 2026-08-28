@@ -1,0 +1,51 @@
+# ============================================================
+# Top-8 Agent 004 — MACD/RSI swing on the strongest 8 of the 16
+# ============================================================
+# Same strategy + code as Agents 002/003 (swing_bot/bot.py), different coin set:
+# the top 8 performers across the other two bots' 16 coins (ranked by return since
+# the mid-July baseline). Laggards may be dropped and replaced with stronger coins
+# over time by editing this watchlist. Started its own baseline "today" (not
+# backfilled to July) to avoid survivorship bias.
+
+dry_run: true
+display_name: "Top-8 Agent 004"
+
+watchlist:
+  - "ZEC-USD"
+  - "SOL-USD"
+  - "LINK-USD"
+  - "ETH-USD"
+  - "XRP-USD"
+  - "ADA-USD"
+  - "HYPE-USD"
+  - "BTC-USD"
+
+capital:
+  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+
+entry:
+  rsi_buy_max: 40           # buy the dip-turn (MACD bullish cross while RSI below this)
+
+exit:
+  rsi_overbought: 75        # arm the sell once RSI reaches this
+  trail_pct: 10             # then sell when price fades this % off its peak
+
+protections:
+  stoploss_guard:
+    enabled: true
+    lookback_hours: 72
+    trade_limit: 3
+    required_profit_usd: 0.0
+  max_drawdown:
+    enabled: true
+    max_drawdown_pct: 20
+    cooldown_hours: 12
+
+liquidity:
+  enabled: true
+  min_24h_volume_usd: 2000000
+  max_spread_pct: 0.6
+
+poll_seconds: 900
+fee_pct: 0.6
+state_file: "swing_portfolio.json"
