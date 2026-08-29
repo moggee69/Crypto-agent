@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 82.97
+      "last_price": 83.11
     },
     "ZEC": {
       "qty": 0.10183382850117816,
-      "last_price": 836.81
+      "last_price": 836.42
     },
     "WBT": {
       "qty": 1.1041377395168008,
-      "last_price": 71.8
+      "last_price": 72.13
     },
     "RAIN": {
       "qty": 4519.280825109743,
-      "last_price": 0.01763544
+      "last_price": 0.01763364
     },
     "SOL": {
       "qty": 0.7256798685891586,
-      "last_price": 105.12
+      "last_price": 105.27
     }
   }
 }
