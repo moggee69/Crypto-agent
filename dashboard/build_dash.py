@@ -40,7 +40,7 @@ def cb(sym, gran, days):
 
 
 print("Fetching Coinbase candles for 16 coins...")
-daily = {s: cb(s, 86400, 60) for s in ALL}
+daily = {s: cb(s, 86400, 90) for s in ALL}
 hourly = {s: cb(s, 3600, 18) for s in ALL}
 
 # ---------- equity / positions / ledger — from the bots' LIVE files (portfolio + CSV logs) ----------
@@ -147,7 +147,7 @@ for s in ALL:
             h4[b] = [b, o, h, l, c, v]
         else:
             x = h4[b]; x[2] = max(x[2], h); x[3] = min(x[3], l); x[4] = c; x[5] += v
-    candles[s] = {"D": daily[s][-45:], "H4": [h4[b] for b in sorted(h4)], "H1": hourly[s][-192:]}
+    candles[s] = {"D": daily[s][-60:], "H4": [h4[b] for b in sorted(h4)], "H1": hourly[s][-192:]}
 
 DATA = {"sl": sl, "sw": sw, "a4": a4, "pos": pos, "tr": tr, "prox": prox, "prox3": prox3, "prox4": prox4,
         "spark": spark, "spark3": spark3, "spark4": spark4, "bench": bench, "act": act,
