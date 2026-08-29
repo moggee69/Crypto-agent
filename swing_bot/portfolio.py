@@ -22,7 +22,7 @@ def _now() -> str:
 class Portfolio:
     def __init__(self, cfg: dict):
         self.cfg = cfg
-        self.name = cfg.get("display_name", "Position Trader Agent 002")
+        self.name = cfg.get("display_name", "Utility position bot 002")
         self.fee = cfg.get("fee_pct", 0.6)
         self.state_file = cfg.get("state_file", "swing_portfolio.json")
         self.state = self._load()

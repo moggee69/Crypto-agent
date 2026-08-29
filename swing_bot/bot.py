@@ -105,7 +105,7 @@ def main():
     signal.signal(signal.SIGTERM, shutdown)
 
     mode = "DRY RUN (paper)" if cfg.get("dry_run", True) else "LIVE"
-    name = cfg.get("display_name", "Position Trader Agent 002")
+    name = cfg.get("display_name", "Utility position bot 002")
     print(f"=== {name}  ·  MACD/RSI swing  |  {mode} ===")
     print(f"Watching: {', '.join(products)}")
     print(f"Buy: MACD bullish cross + RSI < {cfg['entry']['rsi_buy_max']}  |  "

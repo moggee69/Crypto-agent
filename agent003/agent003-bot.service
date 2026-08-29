@@ -1,4 +1,4 @@
-# systemd unit for Position Trader Agent 003 (MACD/RSI swing, paper).
+# systemd unit for Blue-chip position bot 003 (MACD/RSI swing, paper).
 #
 # Runs the SAME code as Agent 002 (swing_bot/bot.py) but from this folder, so it
 # reads agent003/config.yaml and writes its own state here. Install on the VPS:
@@ -8,7 +8,7 @@
 #   tail -f /opt/crypto-agent/agent003/bot.log
 
 [Unit]
-Description=Position Trader Agent 003 (MACD/RSI swing, majors + liquid alts, paper)
+Description=Blue-chip position bot 003 (MACD/RSI swing, majors + liquid alts, paper)
 After=network-online.target
 Wants=network-online.target
 

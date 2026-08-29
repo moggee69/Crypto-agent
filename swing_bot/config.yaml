@@ -1,12 +1,12 @@
 # ============================================================
-# Position Trader Agent 002 — MACD/RSI swing strategy
+# Utility position bot 002 — MACD/RSI swing strategy
 # ============================================================
 # Buys a dip once momentum turns up (MACD bullish cross while RSI is low), holds
 # through pullbacks, and only exits after a run overheats (RSI >= overbought) and
 # then fades. Settings chosen from full-history backtests (2019+). Paper by default.
 
 dry_run: true
-display_name: "Position Trader Agent 002"   # shown in the banner + push alerts
+display_name: "Utility position bot 002"   # shown in the banner + push alerts
 
 watchlist:
   - "XLM-USD"

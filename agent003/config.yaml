@@ -1,12 +1,12 @@
 # ============================================================
-# Position Trader Agent 003 — MACD/RSI swing (majors + liquid alts)
+# Blue-chip position bot 003 — MACD/RSI swing (majors + liquid alts)
 # ============================================================
 # A duplicate of Agent 002's strategy on a different coin set. Runs the SAME code
 # (swing_bot/bot.py) with this config and its own state folder — so any strategy
 # change to Agent 002 automatically applies here too.
 
 dry_run: true
-display_name: "Position Trader Agent 003"   # shown in the banner + push alerts
+display_name: "Blue-chip position bot 003"   # shown in the banner + push alerts
 
 watchlist:
   - "BTC-USD"

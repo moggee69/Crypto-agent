@@ -1,5 +1,5 @@
 # ============================================================
-# Top-8 Agent 004 — MACD/RSI swing on the strongest 8 of the 16
+# All-stars (top-8) winners bot 004 — MACD/RSI swing on the strongest 8 of the 16
 # ============================================================
 # Same strategy + code as Agents 002/003 (swing_bot/bot.py), different coin set:
 # the top 8 performers across the other two bots' 16 coins (ranked by return since
@@ -8,7 +8,7 @@
 # backfilled to July) to avoid survivorship bias.
 
 dry_run: true
-display_name: "Top-8 Agent 004"
+display_name: "All-stars (top-8) winners bot 004"
 
 watchlist:
   - "ZEC-USD"

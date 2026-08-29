@@ -17,7 +17,7 @@ def push(title: str, message: str, tags: str = ""):
         # HTTP headers must be ASCII/latin-1, so strip anything else (e.g. emoji)
         # from the title. Emoji in notifications come from `tags` instead, and
         # the message body is sent as UTF-8.
-        safe_title = title.encode("ascii", "ignore").decode("ascii").strip() or "Position Trader Agent 002"
+        safe_title = title.encode("ascii", "ignore").decode("ascii").strip() or "Utility position bot 002"
         headers = {"Title": safe_title}
         if tags:
             headers["Tags"] = tags
