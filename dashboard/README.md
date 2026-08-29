@@ -29,9 +29,14 @@ private Claude Artifact (claude.ai/code/artifacts); this is the source + pipelin
 2. `python build_dash.py` → rewrites `dashboard.html` with fresh data.
 3. Re-publish `dashboard.html` as the Claude Artifact (same URL).
 
-Regenerate the deploy bundles locally instead of pulling from the droplet:
-`python sim_backfill.py` (writes `sw_*` + `sl_*`), then `python agent004_baseline.py`
-and `python agent004_bundle.py` (write `a4_*`).
+Regenerate the bot data files:
+- `python sim_backfill.py` — deterministically replays 002 + 003 from the mid-July
+  baseline (writes `sw_*` + `sl_*`); matches the running bots.
+- `python pull_live_004.py` — pulls **004** live from the droplet (writes `a4_*`).
+  Use this, NOT `agent004_baseline.py`: 004 has no deterministic backfill, so a local
+  baseline pegs every buy price to today's close and its Open-Positions P&L shows ~0.
+  (`agent004_baseline.py` / `agent004_bundle.py` remain only for seeding a brand-new
+  004 baseline on the droplet, not for the dashboard.)
 
 ## Paths are portable — no edits needed
 
