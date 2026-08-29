@@ -142,11 +142,9 @@ tr:last-child td{border-bottom:none}
       <div class="controls">
         <label>View
           <select id="gran">
-            <option value="0">Minute</option>
-            <option value="3600" selected>Hour</option>
-            <option value="86400">Day</option>
-            <option value="2592000">Month</option>
-            <option value="31536000">Year</option>
+            <option value="0" selected>Daily</option>
+            <option value="604800">Weekly</option>
+            <option value="2592000">Monthly</option>
           </select>
         </label>
         <label>Window
@@ -300,7 +298,7 @@ function draw(){
   $('readout').innerHTML=`<span>${fdate(tt0)} → ${fdate(tt1)}</span>
     <span>Utility 002 ${fmtc(cs)}</span><span>Blue-chip 003 ${fmtc(cl)}</span><span>All-stars 004 ${fmtc(ca)}</span><span>Buy &amp; hold ${fmtc(cb)}</span>`;
   if(sl.length<3 && (bucket>=2592000)){ note.style.display='block';
-    note.textContent='The bots have only ~'+spanDays+' days of history, so Month / Year views fill in as they run longer.'; }
+    note.textContent='The bots have only ~'+spanDays+' days of history, so the Monthly view fills in as they run longer.'; }
   else note.style.display='none';
 }
 granEl.onchange=draw; winEl.oninput=draw; draw();
