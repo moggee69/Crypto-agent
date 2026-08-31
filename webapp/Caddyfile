@@ -12,7 +12,11 @@
 165-227-84-219.sslip.io {
 	root * /opt/crypto-agent/webapp
 	encode gzip
-	basic_auth {
+	# "stay signed in": accept the desk_auth cookie in place of the password. The
+	# token is generated once into /opt/crypto-agent/remember_token.txt (outside the
+	# served dir) and injected into the page by build_page.py; put the same value here.
+	@noremember not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
+	basic_auth @noremember {
 		# <username>  <bcrypt hash from `caddy hash-password`>
 		moggee REPLACE_WITH_BCRYPT_HASH
 	}
