@@ -57,8 +57,18 @@ def bot_data(tag, botcode, poscode):
     port = json.load(open(os.path.join(SC, f"{tag}_portfolio.json")))
     rows = list(csv.DictReader(open(os.path.join(SC, f"{tag}_equity.csv"))))
     eq = [[_ep(r["timestamp_utc"]), round(float(r["equity"]), 2)] for r in rows]
-    cur = float(rows[-1]["equity"]) if rows else 500.0
-    pnl = float(rows[-1]["pnl_pct"]) if rows else 0.0
+    # LIVE mark-to-market (holdings x current price + cash) — matches the exchange now,
+    # vs the bot's equity log which marks to the last COMPLETED daily close.
+    start = float(port.get("start_capital", 500.0))
+    live = 0.0
+    for prod, c in port.get("coins", {}).items():
+        live += c.get("cash", 0.0)
+        if c.get("holding"):
+            s = prod.replace("-USD", "")
+            live += c.get("qty", 0.0) * (prices.get(s) or c.get("buy_price", 0.0))
+    cur = round(live, 2)
+    pnl = round((live / start - 1) * 100, 2)
+    eq.append([int(time.time()), cur])            # live tail so the curve ends "now"
     p = []
     for prod, c in port.get("coins", {}).items():
         if c.get("holding"):
