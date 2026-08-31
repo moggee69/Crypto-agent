@@ -35,6 +35,9 @@
 .kpis .tile:nth-child(3){border-left-color:var(--lc-gold)}
 .kpis .tile:nth-child(4){border-left-color:var(--lc-ice)}
 .tile .lab{display:flex;align-items:center;gap:7px;color:var(--ink-2);font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:9px}
+.kpi-badge{margin-left:auto;font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.14em;padding:2px 7px;border-radius:4px;color:#fff;flex-shrink:0}
+.kpi-badge.live{background:#16a34a}
+.kpi-badge.paper{background:#dc2626}
 .tile .swatch{width:9px;height:9px;border-radius:2px}
 .tile .val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:30px;font-weight:500;letter-spacing:-.01em;line-height:1;color:var(--ink)}
 .tile .foot{margin-top:9px;color:var(--ink-2);font-size:12px;display:flex;align-items:center;gap:8px;letter-spacing:.03em}
@@ -226,15 +229,16 @@ const fp=v=>v<0.01?v.toFixed(5):v<1?v.toFixed(4):v.toFixed(3);
 const comb=DATA.sl.cur+DATA.sw.cur, combPnl=(comb-1000)/1000*100;
 const benchPnl=(DATA.bench[DATA.bench.length-1][1]-500)/500*100;
 const kpis=[
-  {lab:'Utility position bot 002',sw:'var(--accent)',val:money(DATA.sw.cur),p:DATA.sw.pnl,foot:'holding '+(DATA.pos.filter(x=>x.bot==='Swing').map(x=>x.coin).join(', ')||'flat')},
-  {lab:'Blue-chip position bot 003',sw:'var(--line2)',val:money(DATA.sl.cur),p:DATA.sl.pnl,foot:'holding '+(DATA.pos.filter(x=>x.bot==='Stop-loss').map(x=>x.coin).join(', ')||'flat')},
-  {lab:'All-stars (top-8) winners bot 004',sw:'var(--lc-lilac)',val:money(DATA.a4.cur),p:DATA.a4.pnl,foot:'holding '+(DATA.pos.filter(x=>x.bot==='Top8').map(x=>x.coin).join(', ')||'flat')},
+  {lab:'Utility position bot 002',sw:'var(--accent)',val:money(DATA.sw.cur),p:DATA.sw.pnl,badge:'paper',foot:'holding '+(DATA.pos.filter(x=>x.bot==='Swing').map(x=>x.coin).join(', ')||'flat')},
+  {lab:'Blue-chip position bot 003',sw:'var(--line2)',val:money(DATA.sl.cur),p:DATA.sl.pnl,badge:'live',foot:'holding '+(DATA.pos.filter(x=>x.bot==='Stop-loss').map(x=>x.coin).join(', ')||'flat')},
+  {lab:'All-stars (top-8) winners bot 004',sw:'var(--lc-lilac)',val:money(DATA.a4.cur),p:DATA.a4.pnl,badge:'paper',foot:'holding '+(DATA.pos.filter(x=>x.bot==='Top8').map(x=>x.coin).join(', ')||'flat')},
   {lab:'Buy & hold',sw:'var(--bench)',val:money(DATA.bench[DATA.bench.length-1][1]),p:benchPnl,foot:'if you held all 16'}
 ];
 $('kpis').innerHTML=kpis.map(k=>{
   const pill=k.p===null?'':`<span class="pill ${cls(k.p)}">${pctTxt(k.p)}</span>`;
   const sw=k.sw?`<span class="swatch" style="background:${k.sw}"></span>`:'';
-  return `<div class="tile"><div class="lab">${sw}${k.lab}</div><div class="val">${k.val}</div>
+  const badge=k.badge?`<span class="kpi-badge ${k.badge}">${k.badge==='live'?'LIVE':'PAPER'}</span>`:'';
+  return `<div class="tile"><div class="lab">${sw}${k.lab}${badge}</div><div class="val">${k.val}</div>
     <div class="foot">${pill}<span>${k.foot}</span></div></div>`;
 }).join('');
 
