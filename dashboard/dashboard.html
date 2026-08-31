@@ -174,6 +174,7 @@ tr:last-child td{border-bottom:none}
       <section class="panel">
         <h2>Open positions</h2>
         <p class="cap">What each bot is holding right now.</p>
+        <div class="lfilter" id="pfilter"><button data-f="all" class="on">All</button><button data-f="Swing">Utility 002</button><button data-f="Stop-loss">Blue-chip 003</button><button data-f="Top8">All-stars 004</button></div>
         <table><thead><tr><th>Bot / coin</th><th class="num">Entry</th><th class="num">Now</th><th class="num">Unreal.</th></tr></thead>
           <tbody id="pos"></tbody></table>
       </section>
@@ -307,13 +308,18 @@ function draw(){
 }
 granEl.onchange=draw; winEl.oninput=draw; draw();
 
-$('pos').innerHTML=DATA.pos.map(p=>{
-  const col=posColor[p.bot]||'var(--line2)';
-  return `<tr><td><span class="botdot" style="background:${col}"></span><span class="coin">${p.coin}</span>
-    <span style="color:var(--ink-3);font-size:11px"> ${posName[p.bot]||p.bot}</span></td>
-    <td class="num">${fp(p.buy)}</td><td class="num">${fp(p.cur)}</td>
-    <td class="num"><span class="pill ${cls(p.pnl)}">${pctTxt(p.pnl)}</span></td></tr>`;
-}).join('');
+function renderPos(f){
+  const rows=DATA.pos.filter(p=>f==='all'||p.bot===f);
+  $('pos').innerHTML=rows.map(p=>{
+    const col=posColor[p.bot]||'var(--line2)';
+    return `<tr><td><span class="botdot" style="background:${col}"></span><span class="coin">${p.coin}</span>
+      <span style="color:var(--ink-3);font-size:11px"> ${posName[p.bot]||p.bot}</span></td>
+      <td class="num">${fp(p.buy)}</td><td class="num">${fp(p.cur)}</td>
+      <td class="num"><span class="pill ${cls(p.pnl)}">${pctTxt(p.pnl)}</span></td></tr>`;
+  }).join('')||'<tr><td colspan="4" style="text-align:center;color:var(--ink-3);padding:14px 0">No open positions</td></tr>';
+}
+document.querySelectorAll('#pfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderPos(b.dataset.f);});
+renderPos('all');
 
 $('tr').innerHTML=DATA.tr.slice().reverse().map(t=>{
   const col=botColor[t.bot]||'var(--line2)';
