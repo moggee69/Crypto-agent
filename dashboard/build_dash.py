@@ -10,7 +10,7 @@ SC = _paths.DATA_DIR            # the bots' live files ({tag}_portfolio.json / _
 WATCH = ["XLM", "HBAR", "XRP", "AVAX", "LINK", "ONDO", "FLR", "HYPE"]   # Agent 002
 A3 = ["BTC", "SOL", "ETH", "ZEC", "ADA", "SUI", "LTC", "ICP"]          # Agent 003
 ALL = WATCH + A3
-ENTRY_DAY = int(datetime(2026, 7, 15, tzinfo=timezone.utc).timestamp()) // 86400 * 86400
+ENTRY_DAY = int(datetime(2026, 8, 31, tzinfo=timezone.utc).timestamp()) // 86400 * 86400  # live go-live day
 CB = "https://api.exchange.coinbase.com/products/{}-USD/candles"
 
 
@@ -139,8 +139,11 @@ def build_radar(coins, state):
             st = "primed"
         else:
             st = "watching"
+        peak = cst.get("peak_price", 0) or 0
+        target = round(peak * 0.9, 6) if (held and peak) else None   # 10% fade sell trigger
         pr.append({"c": s, "px": round(cl[-1], 6), "rsi": round(rsi_now),
-                   "held": held, "armed": armed, "st": st})
+                   "held": held, "armed": armed, "st": st,
+                   "peak": round(peak, 6) if peak else 0, "target": target})
     return sp, pr
 
 

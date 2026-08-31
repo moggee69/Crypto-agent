@@ -35,7 +35,7 @@ WATCH = ["XLM", "HBAR", "XRP", "AVAX", "LINK", "ONDO", "FLR", "HYPE"]   # 002
 A3 = ["BTC", "SOL", "ETH", "ZEC", "ADA", "SUI", "LTC", "ICP"]          # 003 (LIVE)
 A4C = ["ZEC", "SOL", "LINK", "ETH", "XRP", "ADA", "HYPE", "BTC"]       # 004
 ALL = WATCH + A3
-ENTRY_DAY = int(datetime(2026, 7, 15, tzinfo=timezone.utc).timestamp()) // 86400 * 86400
+ENTRY_DAY = int(datetime(2026, 8, 31, tzinfo=timezone.utc).timestamp()) // 86400 * 86400  # live go-live day
 CB = "https://api.exchange.coinbase.com/products/{}-USD/candles"
 
 # per-bot: (local dir, ledger code, positions code)
@@ -157,8 +157,11 @@ def build_radar(coins, state):
         held, armed = cst.get("holding", False), cst.get("armed", False)
         st = "armed" if (held and armed) else "riding" if held else \
             ("primed" if (swstrat.macd_bull_cross(macd, sig) and rsi_now < 40) else "watching")
+        peak = cst.get("peak_price", 0) or 0
+        target = round(peak * 0.9, 6) if (held and peak) else None   # 10% fade sell trigger
         pr.append({"c": s, "px": round(cl[-1], 6), "rsi": round(rsi_now),
-                   "held": held, "armed": armed, "st": st})
+                   "held": held, "armed": armed, "st": st,
+                   "peak": round(peak, 6) if peak else 0, "target": target})
     return sp, pr
 
 
