@@ -26,11 +26,6 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(ROOT, "dashboard", "dashboard.html")
 OUT = os.path.join(HERE, "index.html")
 
-# "stay signed in" cookie token (kept OUTSIDE the served dir). If present, the page
-# offers a remember-me toggle and Caddy accepts the cookie in place of basic-auth.
-_TF = os.path.join(ROOT, "remember_token.txt")
-TOKEN = open(_TF).read().strip() if os.path.exists(_TF) else ""
-
 WATCH = ["XLM", "HBAR", "XRP", "AVAX", "LINK", "ONDO", "FLR", "HYPE"]   # 002
 A3 = ["BTC", "SOL", "ETH", "ZEC", "ADA", "SUI", "LTC", "ICP"]          # 003 (LIVE)
 A4C = ["ZEC", "SOL", "LINK", "ETH", "XRP", "ADA", "HYPE", "BTC"]       # 004
@@ -230,30 +225,19 @@ HEAD = (
 RELOAD = '<script>setTimeout(function(){if(!document.hidden)location.reload()},300000);</script>'
 EXTRAS = r'''
 <div id="ptr" style="position:fixed;top:0;left:0;right:0;height:0;display:flex;align-items:center;justify-content:center;color:#9ea9ff;font:12px/1 ui-monospace,monospace;overflow:hidden;transition:height .12s;z-index:9999;background:rgba(0,0,0,.55);pointer-events:none"></div>
-<label id="rememberBox" style="position:fixed;top:calc(8px + env(safe-area-inset-top));right:10px;z-index:9998;display:flex;gap:7px;align-items:center;background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 12px;font:11px/1 ui-monospace,monospace;color:#9ea9ff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)"><input type="checkbox" id="rememberChk" style="accent-color:#4ade80;width:15px;height:15px">stay signed in</label>
 <script>
 (function(){
-  var TOKEN=__TOKEN__;
-  var box=document.getElementById('rememberBox'), chk=document.getElementById('rememberChk');
-  if(!TOKEN){ if(box) box.style.display='none'; }
-  else if(chk){
-    chk.checked = document.cookie.indexOf('desk_auth='+TOKEN) >= 0;
-    chk.addEventListener('change', function(){
-      if(chk.checked) document.cookie='desk_auth='+TOKEN+'; path=/; max-age=31536000; secure; samesite=Lax';
-      else document.cookie='desk_auth=; path=/; max-age=0; secure; samesite=Lax';
-    });
-  }
-  var ptr=document.getElementById('ptr'), sy=0, pulling=false, TH=70;
+  var ptr=document.getElementById("ptr"), sy=0, pulling=false, TH=70;
   function top(){ return (document.scrollingElement||document.documentElement).scrollTop; }
-  addEventListener('touchstart', function(e){ if(top()<=0){ sy=e.touches[0].clientY; pulling=true; } }, {passive:true});
-  addEventListener('touchmove', function(e){ if(!pulling) return; var d=e.touches[0].clientY-sy;
-    if(d>0){ var h=Math.min(d*0.5,84); ptr.style.height=h+'px'; ptr.textContent=h>=TH?'↑ release to refresh':'↓ pull to refresh'; }
-    else { ptr.style.height='0'; } }, {passive:true});
-  addEventListener('touchend', function(){ if(!pulling) return; pulling=false;
+  addEventListener("touchstart", function(e){ if(top()<=0){ sy=e.touches[0].clientY; pulling=true; } }, {passive:true});
+  addEventListener("touchmove", function(e){ if(!pulling) return; var d=e.touches[0].clientY-sy;
+    if(d>0){ var h=Math.min(d*0.5,84); ptr.style.height=h+"px"; ptr.textContent=h>=TH?"↑ release to refresh":"↓ pull to refresh"; }
+    else { ptr.style.height="0"; } }, {passive:true});
+  addEventListener("touchend", function(){ if(!pulling) return; pulling=false;
     var h=parseFloat(ptr.style.height)||0;
-    if(h>=TH){ ptr.textContent='refreshing…'; location.reload(); } else { ptr.style.height='0'; } }, {passive:true});
+    if(h>=TH){ ptr.textContent="refreshing…"; location.reload(); } else { ptr.style.height="0"; } }, {passive:true});
 })();
-</script>'''.replace("__TOKEN__", json.dumps(TOKEN))
+</script>'''
 CONTROLS = r'''
 <div id="ctrlWrap" style="position:fixed;top:calc(8px + env(safe-area-inset-top));left:10px;z-index:9998;font:11px/1.2 ui-monospace,monospace">
   <button id="ctrlToggle" style="background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 13px;color:#9ea9ff;font:inherit;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)">controls</button>

@@ -1,25 +1,29 @@
 # Caddy config for the private Trading Desk PWA (install to /etc/caddy/Caddyfile).
 #
-# - Auto-HTTPS: Caddy gets a real Let's Encrypt cert for the sslip.io hostname,
-#   which resolves to the droplet's IP (no domain registration needed).
-# - Private: basic_auth password-protects the whole site. Generate a hash with
-#     caddy hash-password
-#   and paste it below (the bcrypt hash is safe to store here; the password isn't).
+# - Auto-HTTPS: real Let's Encrypt cert for the sslip.io hostname (resolves to the
+#   droplet IP; no domain registration needed).
+# - Custom login: the site is gated by the desk_auth cookie, which /api/login sets
+#   after bot_control.py verifies the password (bcrypt). Public paths: the login
+#   page, the login endpoint, and the PWA install assets. Everything else, without a
+#   valid cookie, redirects to /login.html.
+# - The cookie value is the token in /opt/crypto-agent/remember_token.txt — paste it
+#   into the matcher below (bot_control.py reads the same file to set it).
 # - Reload after edits:  systemctl reload caddy
 #
-# Requires firewall ports 80 + 443 open, and the page built at /opt/crypto-agent/webapp.
+# Requires ports 80 + 443 open, the page built at /opt/crypto-agent/webapp, and the
+# bot-control service running on localhost:8899.
 
 165-227-84-219.sslip.io {
 	root * /opt/crypto-agent/webapp
 	encode gzip
-	# "stay signed in": accept the desk_auth cookie in place of the password. The
-	# token is generated once into /opt/crypto-agent/remember_token.txt (outside the
-	# served dir) and injected into the page by build_page.py; put the same value here.
-	@noremember not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
-	basic_auth @noremember {
-		# <username>  <bcrypt hash from `caddy hash-password`>
-		moggee REPLACE_WITH_BCRYPT_HASH
+
+	# needs auth = no valid login cookie AND not a public path -> send to the login page
+	@needlogin {
+		not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
+		not path /login.html /api/login /manifest.json /icon-180.png /icon-192.png /icon-512.png
 	}
-	reverse_proxy /api/* localhost:8899   # freeze/resume control API (bot_control.py)
+	redir @needlogin /login.html 302
+
+	reverse_proxy /api/* localhost:8899
 	file_server
 }

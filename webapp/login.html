@@ -1,0 +1,63 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trading Desk">
+<meta name="theme-color" content="#000000">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Trading Desk — Sign in</title>
+<style>
+  :root{--bg:#0b1120;--panel:#141c34;--border:#2a355c;--ink:#dce6ff;--ink2:#9ea9ff;--ink3:#5f6f9e;
+    --accent:#9ea9ff;--up:#4ade80;--down:#f4726a;--mono:ui-monospace,"SF Mono",Menlo,monospace}
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:radial-gradient(120% 90% at 50% 0%,#141c34 0%,#080c18 60%,#05070f 100%);
+    color:var(--ink);font-family:var(--mono);display:flex;align-items:center;justify-content:center;
+    padding:24px calc(24px + env(safe-area-inset-right)) 24px calc(24px + env(safe-area-inset-left));min-height:100%}
+  .card{width:100%;max-width:340px;text-align:center}
+  .logo{width:76px;height:76px;border-radius:18px;border:1px solid var(--border);margin-bottom:18px}
+  h1{font-size:22px;letter-spacing:.18em;text-transform:uppercase;margin:0 0 4px;font-weight:700}
+  .sub{color:var(--ink3);font-size:12px;letter-spacing:.08em;margin:0 0 26px}
+  form{display:flex;flex-direction:column;gap:14px;text-align:left}
+  input[type=password]{width:100%;background:var(--panel);border:1px solid var(--border);border-radius:12px;
+    padding:14px 16px;color:var(--ink);font:16px/1 var(--mono);outline:none}
+  input[type=password]:focus{border-color:var(--accent)}
+  .rem{display:flex;align-items:center;gap:9px;color:var(--ink2);font-size:13px;user-select:none;cursor:pointer}
+  .rem input{width:17px;height:17px;accent-color:var(--up)}
+  button{width:100%;background:var(--accent);color:#0b1120;border:none;border-radius:12px;padding:14px;
+    font:700 15px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;margin-top:4px}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.6}
+  #err{color:var(--down);font-size:13px;min-height:18px;text-align:center}
+  .foot{color:var(--ink3);font-size:11px;margin-top:22px;letter-spacing:.05em}
+</style></head><body>
+  <div class="card">
+    <img class="logo" src="icon-192.png" alt="">
+    <h1>Trading Desk</h1>
+    <p class="sub">private · live paper &amp; real bots</p>
+    <form id="f">
+      <input type="password" id="pw" placeholder="Password" autocomplete="current-password" autofocus>
+      <label class="rem"><input type="checkbox" id="rem" checked> stay signed in on this device</label>
+      <button type="submit" id="go">Sign in</button>
+      <div id="err"></div>
+    </form>
+    <div class="foot">figures are simulated + live paper trading</div>
+  </div>
+<script>
+  var f=document.getElementById('f'), pw=document.getElementById('pw'),
+      rem=document.getElementById('rem'), err=document.getElementById('err'), go=document.getElementById('go');
+  f.addEventListener('submit', function(e){
+    e.preventDefault(); err.textContent=''; go.disabled=true; go.textContent='Signing in…';
+    fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({password:pw.value,remember:rem.checked})})
+      .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+      .then(function(res){
+        if(res.ok && res.j && res.j.ok){ location.href='/'; }
+        else { err.textContent='Wrong password.'; go.disabled=false; go.textContent='Sign in'; pw.select(); }
+      })
+      .catch(function(){ err.textContent='Sign-in failed — try again.'; go.disabled=false; go.textContent='Sign in'; });
+  });
+</script>
+</body></html>
