@@ -77,8 +77,10 @@ def _field(obj, *keys):
 class Broker:
     def __init__(self, cfg: dict):
         from coinbase.rest import RESTClient   # lazy: only needed for live trading
-        self.client = RESTClient(api_key=os.environ["COINBASE_API_KEY"],
-                                 api_secret=os.environ["COINBASE_API_SECRET"])
+        # A secret copied from the downloaded JSON key file has literal "\n" instead
+        # of real newlines — turn those back into newlines so the PEM parses.
+        secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")
+        self.client = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret)
         live = cfg.get("live", {})
         self.max_order_usd = float(live.get("max_order_usd", 250))
         self.poll_secs = float(live.get("fill_poll_seconds", 2))
