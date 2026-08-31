@@ -60,14 +60,14 @@ def main():
     m = b.meta(product)
     print(f"product meta : base_inc={m['base_inc']}  quote_inc={m['quote_inc']}  "
           f"base_min={m['base_min']}  quote_min={m['quote_min']}")
-    print(f"USD available: ${b.available('USD'):,.2f}")
+    base, quote = (product.split("-") + ["USD"])[:2]
+    print(f"{quote} available: {b.available(quote):,.2f}")
 
     print("\n[1/2] BUY ...")
     buy = b.market_buy(product, usd)
     print(f"  filled {buy.qty:g} @ ${buy.price:,.6g}   fee ${buy.fee:.4f}   "
           f"spent ${buy.quote_spent:.4f}   id {buy.order_id}")
 
-    base = product.split("-")[0]
     print(f"  {base} balance now: {b.available(base):g}")
 
     print("\n[2/2] SELL back ...")
