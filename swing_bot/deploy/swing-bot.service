@@ -10,7 +10,7 @@
 # It polls Coinbase's public candle API, so no API keys are needed for paper.
 
 [Unit]
-Description=Utility position bot 002 (MACD/RSI swing, utility/mid-cap alts, paper)
+Description=Utility position bot 002 (MACD/RSI swing, utility/mid-cap alts, LIVE)
 After=network-online.target
 Wants=network-online.target
 
@@ -23,6 +23,7 @@ RestartSec=15
 # Optional private settings (e.g. NTFY_TOPIC for push alerts). The leading '-'
 # makes it optional so the service still starts if the file is absent.
 EnvironmentFile=-/etc/swing-bot.env
+EnvironmentFile=-/etc/crypto-agent-002.env
 StandardOutput=append:/opt/crypto-agent/swing_bot/bot.log
 StandardError=append:/opt/crypto-agent/swing_bot/bot.log
 

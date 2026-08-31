@@ -5,7 +5,7 @@
 # through pullbacks, and only exits after a run overheats (RSI >= overbought) and
 # then fades. Settings chosen from full-history backtests (2019+). Paper by default.
 
-dry_run: true
+dry_run: false        # LIVE (real money) — gated by the live block below + API keys
 display_name: "Utility position bot 002"   # shown in the banner + push alerts
 
 watchlist:
@@ -19,7 +19,7 @@ watchlist:
   - "HYPE-USD"
 
 capital:
-  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+  total_usd: 400          # real USDC capital (~$50/coin); leaves a buffer under the ~$404 free
 
 # BUY: MACD line crosses ABOVE its signal line (momentum turning up) while RSI is
 # below rsi_buy_max — i.e. buy a dip that's turning, don't chase strength.
@@ -59,16 +59,17 @@ poll_seconds: 900          # check for newly-completed candles every 15 min
 fee_pct: 0.6               # simulated taker fee (paper)
 state_file: "swing_portfolio.json"
 
-# ---- LIVE trading (real money) — OFF by default -------------------------------
-# Real orders require ALL of: dry_run:false, live.live_trading:true, and the keys
-# COINBASE_API_KEY / COINBASE_API_SECRET present in the environment. Any one
-# missing keeps this bot on paper. Read LIVE_TRADING.md before enabling.
-# Kill-switch: create a file named HALT in the bot's working dir to freeze live
-# orders instantly (delete it to resume).
+# ---- LIVE trading (real money) — ACTIVE for this bot ----
+# Real orders require ALL of: dry_run:false (above), live_trading:true, and the API
+# keys in the env (COINBASE_API_KEY + COINBASE_API_SECRET_FILE via the service).
+# Kill-switch: create /opt/crypto-agent/swing_bot/HALT to freeze live orders.
+# NOTE: shares the Coinbase account with 003 — safe because 002 and 003 hold no
+# coins in common; each bot only reconciles its own coins, and capital is sized so
+# the two never overdraw the shared USDC.
 live:
-  live_trading: false      # <- the per-bot opt-in. Keep false until smoke-tested.
-  quote_currency: USDC     # trade -USDC pairs (UK accounts hold USDC, not USD).
-                           # Strategy/data still use -USD prices; only orders remap.
-  max_order_usd: 250       # hard ceiling on any single order (safety cap)
-  fill_poll_seconds: 2     # how often to poll a placed order for its fill
-  fill_poll_tries: 30      # stop confirming a fill after this many polls
+  live_trading: true       # this bot IS live
+  quote_currency: USDC     # trade -USDC pairs (account holds USDC); data stays -USD
+  seed_baseline: true      # on first live run, market-buy each coin's bucket once
+  max_order_usd: 120       # single-order ceiling (~$50 buckets, so this is headroom)
+  fill_poll_seconds: 2
+  fill_poll_tries: 30
