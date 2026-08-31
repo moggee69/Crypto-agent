@@ -81,7 +81,7 @@ tr:last-child td{border-bottom:none}
 .rrow:last-child{border-bottom:none}
 .spark{width:100px;height:26px;display:block}
 .st{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 10px;border-radius:6px;white-space:nowrap;letter-spacing:.04em;text-transform:uppercase}
-.st-primed{color:var(--up);background:var(--up-soft)} .st-dipping{color:var(--down);background:var(--down-soft)}
+.st-primed{color:var(--lc-orange);background:rgba(255,159,91,.16)} .st-dipping{color:var(--down);background:var(--down-soft)}
 .st-blocked{color:var(--ink-3);background:var(--panel-2)} .st-rising{color:var(--line2);background:rgba(158,169,255,.18)}
 .actgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px}
 .actcard{background:var(--panel-2);border-radius:4px 14px 14px 4px;border-left:4px solid var(--lc-peri);padding:14px 16px}
@@ -367,7 +367,7 @@ function renderRadar(set){
     var p=r.p; let w, wc='var(--ink-3)';
     if(p.st==='armed'){ const up=(p.px/p.target-1)*100; w=`⬇ sell if it dips to <b>$${fp(p.target)}</b> (−10% from peak $${fp(p.peak)}) — ${up>0.05?up.toFixed(1)+'% above the trigger':'at the trigger now'}`; wc='var(--down)'; }
     else if(p.st==='riding'){ w=`riding — arms to sell once RSI hits 75 (now ${p.rsi})`; wc='var(--line2)'; }
-    else if(p.st==='primed'){ w=`⬆ buy signal live — buys on the next 15-min cycle`; wc='var(--up)'; }
+    else if(p.st==='primed'){ w=`⬆ buy signal live — buys on the next 15-min cycle`; wc='var(--lc-orange)'; }
     else w=`waiting to buy — needs RSI under 40 (now ${p.rsi}) + a MACD turn`;
     return `<div class="rrow">
       <span class="coin">${p.c}</span>${spark(r.spk[p.c])}
