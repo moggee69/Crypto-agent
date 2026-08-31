@@ -132,11 +132,15 @@ def start_price(s):
     return dclose[s][later[0]] if later else None
 
 
+BENCH_FEE = 0.012             # same ~1.2% taker fee a real buy of all 16 would pay
 start_px = {s: start_price(s) for s in ALL}
+# ACTUAL quantity $50 buys of each coin at the start, AFTER the buy fee — then the
+# benchmark is those fixed quantities marked to each day's price.
+bqty = {s: (per * (1 - BENCH_FEE)) / start_px[s] for s in ALL if start_px[s]}
 days_sorted = sorted({d for s in ALL for d in dclose[s] if d >= ENTRY_DAY})
 bench = []
 for d in days_sorted:
-    vals = [per * dclose[s][d] / start_px[s] for s in ALL if d in dclose[s] and start_px[s]]
+    vals = [bqty[s] * dclose[s][d] for s in ALL if d in dclose[s] and s in bqty]
     if len(vals) == len(ALL):
         bench.append([d, round(sum(vals), 2)])
 
