@@ -180,7 +180,8 @@ tr:last-child td{border-bottom:none}
       </section>
       <section class="panel">
         <h2>Recent trades</h2>
-        <p class="cap">Latest activity across both bots.</p>
+        <p class="cap">Latest activity across the bots.</p>
+        <div class="lfilter" id="trfilter"><button data-f="all" class="on">All</button><button data-f="SW">Utility 002</button><button data-f="SL">Blue-chip 003</button><button data-f="A4">All-stars 004</button></div>
         <table><thead><tr><th>When</th><th>Trade</th><th class="num">P&amp;L</th></tr></thead>
           <tbody id="tr"></tbody></table>
       </section>
@@ -321,13 +322,18 @@ function renderPos(f){
 document.querySelectorAll('#pfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#pfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderPos(b.dataset.f);});
 renderPos('all');
 
-$('tr').innerHTML=DATA.tr.slice().reverse().map(t=>{
-  const col=botColor[t.bot]||'var(--line2)';
-  const pnl=t.pnl===null?'—':`<span class="pill ${cls(t.pnl)}">${(t.pnl>=0?'+':'')+'$'+Math.abs(t.pnl).toFixed(2)}</span>`;
-  return `<tr><td class="mono" style="color:var(--ink-2);font-size:12px">${fdate(t.t)}</td>
-    <td><span class="botdot" style="background:${col}"></span><span class="tag ${t.a==='BUY'?'buy':'sell'}">${t.a}</span> <span class="coin">${t.p}</span></td>
-    <td class="num">${pnl}</td></tr>`;
-}).join('');
+function renderTr(f){
+  const rows=DATA.tr.slice().reverse().filter(t=>f==='all'||t.bot===f);
+  $('tr').innerHTML=rows.map(t=>{
+    const col=botColor[t.bot]||'var(--line2)';
+    const pnl=t.pnl===null?'—':`<span class="pill ${cls(t.pnl)}">${(t.pnl>=0?'+':'')+'$'+Math.abs(t.pnl).toFixed(2)}</span>`;
+    return `<tr><td class="mono" style="color:var(--ink-2);font-size:12px">${fdate(t.t)}</td>
+      <td><span class="botdot" style="background:${col}"></span><span class="tag ${t.a==='BUY'?'buy':'sell'}">${t.a}</span> <span class="coin">${t.p}</span></td>
+      <td class="num">${pnl}</td></tr>`;
+  }).join('')||'<tr><td colspan="3" style="text-align:center;color:var(--ink-3);padding:14px 0">No recent trades</td></tr>';
+}
+document.querySelectorAll('#trfilter button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#trfilter button').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderTr(b.dataset.f);});
+renderTr('all');
 
 function spark(vals){
   const W=100,H=26,p=3,mn=Math.min(...vals),mx=Math.max(...vals),rg=(mx-mn)||1;
