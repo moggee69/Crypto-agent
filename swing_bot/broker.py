@@ -85,12 +85,22 @@ class Broker:
         self.max_order_usd = float(live.get("max_order_usd", 250))
         self.poll_secs = float(live.get("fill_poll_seconds", 2))
         self.poll_tries = int(live.get("fill_poll_tries", 30))
+        # The strategy/data use "-USD" product ids; real orders trade this quote
+        # currency instead (e.g. USDC for UK accounts that hold USDC, not USD).
+        self.quote = str(live.get("quote_currency", "USD")).upper()
         self._meta: dict[str, dict] = {}
+
+    def _tp(self, product: str) -> str:
+        """Map a strategy product (BTC-USD) to the actual trade product for the
+        configured quote currency (BTC-USDC). Non "-USD" products pass through."""
+        if self.quote != "USD" and product.endswith("-USD"):
+            return product[:-4] + "-" + self.quote
+        return product
 
     # ---- product metadata (increments / minimums), cached ----
     def meta(self, product: str) -> dict:
         if product not in self._meta:
-            p = self._retry(lambda: self.client.get_product(product))
+            p = self._retry(lambda: self.client.get_product(self._tp(product)))
             p = _field(p, "product") or p
             self._meta[product] = {
                 "base_inc": _num(_field(p, "base_increment")) or 1e-8,
@@ -136,7 +146,7 @@ class Broker:
             raise BrokerError(f"{product} buy size rounded to zero")
         coid = uuid.uuid4().hex
         resp = self._retry(lambda: self.client.market_order_buy(
-            client_order_id=coid, product_id=product,
+            client_order_id=coid, product_id=self._tp(product),
             quote_size=self._fmt(spend, m["quote_inc"])))
         return self._settle(product, resp, is_buy=True)
 
@@ -151,7 +161,7 @@ class Broker:
             raise BrokerError(f"{product} sell size rounded to zero")
         coid = uuid.uuid4().hex
         resp = self._retry(lambda: self.client.market_order_sell(
-            client_order_id=coid, product_id=product,
+            client_order_id=coid, product_id=self._tp(product),
             base_size=self._fmt(qty, m["base_inc"])))
         return self._settle(product, resp, is_buy=False)
 

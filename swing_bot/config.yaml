@@ -67,6 +67,8 @@ state_file: "swing_portfolio.json"
 # orders instantly (delete it to resume).
 live:
   live_trading: false      # <- the per-bot opt-in. Keep false until smoke-tested.
+  quote_currency: USDC     # trade -USDC pairs (UK accounts hold USDC, not USD).
+                           # Strategy/data still use -USD prices; only orders remap.
   max_order_usd: 250       # hard ceiling on any single order (safety cap)
   fill_poll_seconds: 2     # how often to poll a placed order for its fill
   fill_poll_tries: 30      # stop confirming a fill after this many polls
