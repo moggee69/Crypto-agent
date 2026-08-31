@@ -84,8 +84,18 @@ def bot_data(botdir, botcode, poscode):
     eqf = os.path.join(botdir, "swing_equity.csv")
     rows = list(csv.DictReader(open(eqf))) if os.path.exists(eqf) else []
     eq = [[_ep(r["timestamp_utc"]), round(float(r["equity"]), 2)] for r in rows]
-    cur = float(rows[-1]["equity"]) if rows else 500.0
-    pnl = float(rows[-1]["pnl_pct"]) if rows else 0.0
+    # LIVE mark-to-market from holdings + current prices — matches the exchange NOW.
+    # (The bot's own equity log marks to the last COMPLETED daily close, so it lags.)
+    start = float(port.get("start_capital", 500.0))
+    live = 0.0
+    for prod, c in port.get("coins", {}).items():
+        live += c.get("cash", 0.0)
+        if c.get("holding"):
+            s = prod.replace("-USD", "")
+            live += c.get("qty", 0.0) * (prices.get(s) or c.get("buy_price", 0.0))
+    cur = round(live, 2)
+    pnl = round((live / start - 1) * 100, 2)
+    eq.append([int(time.time()), cur])            # live tail so the curve ends "now"
     p = []
     for prod, c in port.get("coins", {}).items():
         if c.get("holding"):
