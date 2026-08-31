@@ -12,6 +12,7 @@ What it proves: authentication, product-metadata lookup, order placement, readin
 back the real fill (size/price/fee), and account balances — the exact path the
 live bot uses.
 """
+import getpass
 import os
 import sys
 
@@ -24,12 +25,24 @@ def main():
     product = args[0] if args else "BTC-USD"
     usd = float(args[1]) if len(args) > 1 else 2.0
 
-    if not (os.environ.get("COINBASE_API_KEY") and os.environ.get("COINBASE_API_SECRET")):
-        sys.exit("ERROR: set COINBASE_API_KEY and COINBASE_API_SECRET in the environment first.")
     if "--yes" not in flags:
         print(f"This will place a REAL market BUY of ~${usd:g} {product} and immediately SELL it back.")
         print(f"Re-run with --yes to confirm:\n    python live_smoke_test.py {product} {usd:g} --yes")
         sys.exit(0)
+
+    # Keys: from the environment if set, otherwise ask for them right here. They
+    # are used only for this run and never written anywhere.
+    key = os.environ.get("COINBASE_API_KEY")
+    secret = os.environ.get("COINBASE_API_SECRET")
+    if not (key and secret):
+        print("\nEnter your Coinbase API credentials (the View+Trade key you created).")
+        print("Nothing is saved — they're used only for this one test.\n")
+        key = key or input("  API key id (e.g. organizations/.../apiKeys/...): ").strip()
+        secret = secret or getpass.getpass("  API secret (paste it — stays hidden): ").strip()
+        os.environ["COINBASE_API_KEY"] = key
+        os.environ["COINBASE_API_SECRET"] = secret
+    if not (key and secret):
+        sys.exit("ERROR: both the API key id and the secret are required.")
     if broker.kill_switch_engaged():
         sys.exit(f"ERROR: kill-switch file '{broker.KILL_SWITCH}' is present — remove it to run.")
 
