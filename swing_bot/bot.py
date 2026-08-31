@@ -104,9 +104,16 @@ def main():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    mode = "DRY RUN (paper)" if cfg.get("dry_run", True) else "LIVE"
+    mode = "LIVE TRADING — REAL MONEY" if pf.live else "DRY RUN (paper)"
     name = cfg.get("display_name", "Utility position bot 002")
     print(f"=== {name}  ·  MACD/RSI swing  |  {mode} ===")
+    if pf.live:
+        import broker
+        print(f"!!! LIVE orders active. Max order ${pf.broker.max_order_usd:g}. "
+              f"Kill-switch: create file '{broker.KILL_SWITCH}' to freeze. !!!", flush=True)
+    elif not cfg.get("dry_run", True):
+        print("(dry_run is off but live gate is CLOSED — still paper. "
+              "Set live.live_trading + API keys to go live.)")
     print(f"Watching: {', '.join(products)}")
     print(f"Buy: MACD bullish cross + RSI < {cfg['entry']['rsi_buy_max']}  |  "
           f"Sell: RSI >= {cfg['exit']['rsi_overbought']} then -{cfg['exit']['trail_pct']}% fade "

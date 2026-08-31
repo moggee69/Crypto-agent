@@ -58,3 +58,15 @@ liquidity:
 poll_seconds: 900          # check for newly-completed candles every 15 min
 fee_pct: 0.6               # simulated taker fee (paper)
 state_file: "swing_portfolio.json"
+
+# ---- LIVE trading (real money) — OFF by default -------------------------------
+# Real orders require ALL of: dry_run:false, live.live_trading:true, and the keys
+# COINBASE_API_KEY / COINBASE_API_SECRET present in the environment. Any one
+# missing keeps this bot on paper. Read LIVE_TRADING.md before enabling.
+# Kill-switch: create a file named HALT in the bot's working dir to freeze live
+# orders instantly (delete it to resume).
+live:
+  live_trading: false      # <- the per-bot opt-in. Keep false until smoke-tested.
+  max_order_usd: 250       # hard ceiling on any single order (safety cap)
+  fill_poll_seconds: 2     # how often to poll a placed order for its fill
+  fill_poll_tries: 30      # stop confirming a fill after this many polls

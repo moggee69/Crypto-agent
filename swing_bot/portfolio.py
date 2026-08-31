@@ -9,6 +9,7 @@ import json
 import os
 from datetime import datetime, timezone
 
+import broker
 import notify
 
 TRADES = "swing_trades.csv"
@@ -26,6 +27,10 @@ class Portfolio:
         self.fee = cfg.get("fee_pct", 0.6)
         self.state_file = cfg.get("state_file", "swing_portfolio.json")
         self.state = self._load()
+        self.live = broker.is_live(cfg)          # all three gates open? (else paper)
+        self.broker = broker.Broker(cfg) if self.live else None
+        if self.live:
+            self.reconcile()                     # sync holdings to the real account at startup
 
     def _load(self) -> dict:
         if os.path.exists(self.state_file):
@@ -63,6 +68,8 @@ class Portfolio:
         usd = st["cash"]
         if usd <= 0 or price <= 0:
             return
+        if self.live:
+            return self._live_buy(product, st, usd, note)
         fee = usd * self.fee / 100
         st["qty"] = (usd - fee) / price
         st["buy_price"] = price
@@ -79,6 +86,8 @@ class Portfolio:
     def sell(self, product, st, price, note) -> float | None:
         if not st["holding"]:
             return None
+        if self.live:
+            return self._live_sell(product, st, note)
         gross = st["qty"] * price
         fee = gross * self.fee / 100
         pnl = (gross - fee) - st["cost_usd"]
@@ -92,6 +101,94 @@ class Portfolio:
                     f"{product}  ${gross:,.2f} @ {price:.6g}\nP&L {pnl:+.2f}  ({note})", tags="red_circle")
         self.save()
         return pnl
+
+    # ---------------- LIVE trading (real Coinbase orders) ----------------
+    def _live_buy(self, product, st, usd, note):
+        if broker.kill_switch_engaged():
+            print(f"  [live] kill-switch set — skipping {product} BUY")
+            return
+        try:
+            fill = self.broker.market_buy(product, usd)
+        except broker.BrokerError as e:
+            print(f"  [live] BUY {product} FAILED: {e}")
+            notify.push(f"{self.name} BUY FAILED", f"{product}\n{e}", tags="warning")
+            return
+        st["qty"] = fill.qty
+        st["buy_price"] = fill.price
+        st["cost_usd"] = fill.quote_spent
+        st["cash"] = max(0.0, usd - fill.quote_spent)   # leftover if size was capped
+        st["holding"] = True
+        self.state["fees_paid"] += fill.fee
+        self._log_trade("BUY", product, fill.quote_spent,
+                        f"LIVE @ {fill.price:.6g} {note} fee {fill.fee:.2f} id {fill.order_id[:8]}")
+        print(f"  BUY* {product:<10} ${fill.quote_spent:,.2f} @ {fill.price:,.6g}  (LIVE {note})")
+        notify.push(f"{self.name} LIVE BUY",
+                    f"{product}  ${fill.quote_spent:,.2f} @ {fill.price:.6g}\n{note}", tags="green_circle")
+        self.save()
+
+    def _live_sell(self, product, st, note):
+        if broker.kill_switch_engaged():
+            print(f"  [live] kill-switch set — skipping {product} SELL")
+            return None
+        base = product.split("-")[0]
+        actual = self.broker.available(base)
+        qty = min(st["qty"], actual) if actual > 0 else st["qty"]   # never oversell
+        try:
+            fill = self.broker.market_sell(product, qty)
+        except broker.BrokerError as e:
+            print(f"  [live] SELL {product} FAILED: {e}")
+            notify.push(f"{self.name} SELL FAILED", f"{product}\n{e}", tags="warning")
+            return None
+        proceeds = fill.quote_spent           # gross - fee, for a sell
+        pnl = proceeds - st["cost_usd"]
+        st["cash"] = proceeds
+        st["holding"] = False
+        st["qty"] = 0.0
+        self.state["fees_paid"] += fill.fee
+        self._log_trade("SELL", product, fill.qty * fill.price,
+                        f"LIVE @ {fill.price:.6g} {note} pnl {pnl:+.2f} fee {fill.fee:.2f} id {fill.order_id[:8]}")
+        print(f"  SELL*{product:<10} ${proceeds:,.2f} @ {fill.price:,.6g}  (LIVE {note}, P&L {pnl:+.2f})")
+        notify.push(f"{self.name} LIVE SELL",
+                    f"{product}  ${proceeds:,.2f} @ {fill.price:.6g}\nP&L {pnl:+.2f}  ({note})", tags="red_circle")
+        self.save()
+        return pnl
+
+    def reconcile(self):
+        """Sync each coin's HOLDING to the real exchange balance (live only).
+
+        The exchange is the source of truth for coin quantities. This catches an
+        unrecorded fill after a mid-order crash (adopt the position) and a
+        position that vanished off-exchange (mark flat). Per-coin USD *cash*
+        buckets are a bot-internal split the exchange can't tell us, so they're
+        left to the per-trade fill accounting."""
+        if not self.live:
+            return
+        for product, st in self.state["coins"].items():
+            base = product.split("-")[0]
+            actual = self.broker.available(base)
+            m = self.broker.meta(product)
+            dust = m["base_min"] or 1e-9
+            held_on_exchange = actual > dust
+            if held_on_exchange and not st["holding"]:
+                px = self.broker.last_fill_price(product) or st.get("buy_price") or 0.0
+                st["qty"] = actual
+                st["holding"] = True
+                if px:
+                    st["buy_price"] = px
+                    st["cost_usd"] = actual * px
+                    st["peak_price"] = px
+                msg = f"adopted {product} {actual:g} @ {px or '?'}"
+                print(f"  [reconcile] {msg}")
+                notify.push(f"{self.name} RECONCILE", msg, tags="warning")
+            elif not held_on_exchange and st["holding"]:
+                st["qty"] = 0.0
+                st["holding"] = False
+                print(f"  [reconcile] {product} not on exchange -> marked flat")
+                notify.push(f"{self.name} RECONCILE", f"{product} not on exchange -> flat", tags="warning")
+            elif held_on_exchange and abs(actual - st["qty"]) > dust:
+                print(f"  [reconcile] {product} qty {st['qty']:g} -> {actual:g} (exchange truth)")
+                st["qty"] = actual
+        self.save()
 
     def equity(self, prices: dict) -> float:
         total = 0.0
