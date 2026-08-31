@@ -38,19 +38,33 @@ class Fill:
     quote_spent: float  # buys: gross + fee (USD out) · sells: gross - fee (USD in)
 
 
+def _load_secret() -> str | None:
+    """The API secret, from COINBASE_API_SECRET or, failing that, the file named by
+    COINBASE_API_SECRET_FILE (which keeps a multi-line key out of the env)."""
+    s = os.environ.get("COINBASE_API_SECRET")
+    if not s:
+        sf = os.environ.get("COINBASE_API_SECRET_FILE")
+        if sf and os.path.exists(sf):
+            try:
+                s = open(sf).read().strip()
+            except OSError:
+                s = None
+    return s or None
+
+
 def is_live(cfg: dict) -> bool:
     """Real orders require ALL THREE gates open — otherwise the bot stays on paper.
 
       1. dry_run is false
       2. live.live_trading is true          (a separate, per-bot opt-in)
-      3. API keys are present in the env
+      3. API key id + secret are present (secret via env or COINBASE_API_SECRET_FILE)
     Any one missing => paper. Absence of the `live` section => paper.
     """
     if cfg.get("dry_run", True):
         return False
     if not cfg.get("live", {}).get("live_trading", False):
         return False
-    return bool(os.environ.get("COINBASE_API_KEY") and os.environ.get("COINBASE_API_SECRET"))
+    return bool(os.environ.get("COINBASE_API_KEY") and _load_secret())
 
 
 def kill_switch_engaged() -> bool:
@@ -77,9 +91,12 @@ def _field(obj, *keys):
 class Broker:
     def __init__(self, cfg: dict):
         from coinbase.rest import RESTClient   # lazy: only needed for live trading
+        secret = _load_secret()
+        if not secret:
+            raise BrokerError("no API secret (set COINBASE_API_SECRET or COINBASE_API_SECRET_FILE)")
         # A secret copied from the downloaded JSON key file has literal "\n" instead
         # of real newlines — turn those back into newlines so the PEM parses.
-        secret = os.environ["COINBASE_API_SECRET"].replace("\\n", "\n")
+        secret = secret.replace("\\n", "\n")
         self.client = RESTClient(api_key=os.environ["COINBASE_API_KEY"], api_secret=secret)
         live = cfg.get("live", {})
         self.max_order_usd = float(live.get("max_order_usd", 250))
