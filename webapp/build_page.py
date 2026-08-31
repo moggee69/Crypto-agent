@@ -274,7 +274,9 @@ CONTROLS = r'''
       panel.querySelectorAll("button[data-b]").forEach(function(btn){
         btn.onclick=function(){
           var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
-          if(!halted && !confirm("Freeze "+names[b]+"? It will place no orders until you resume it.")) return;
+          var code=prompt((halted?"Resume ":"Freeze ")+names[b]+" — enter passcode:");
+          if(code===null) return;                         // cancelled
+          if(code!=="6791"){ alert("Wrong passcode."); return; }
           btn.textContent="…";
           fetch("/api/"+act+"/"+b,{method:"POST"}).then(function(r){return r.json();}).then(function(){refresh();})
             .catch(function(){alert("Control failed - try again.");refresh();});
