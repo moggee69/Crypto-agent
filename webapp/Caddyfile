@@ -1,0 +1,20 @@
+# Caddy config for the private Trading Desk PWA (install to /etc/caddy/Caddyfile).
+#
+# - Auto-HTTPS: Caddy gets a real Let's Encrypt cert for the sslip.io hostname,
+#   which resolves to the droplet's IP (no domain registration needed).
+# - Private: basic_auth password-protects the whole site. Generate a hash with
+#     caddy hash-password
+#   and paste it below (the bcrypt hash is safe to store here; the password isn't).
+# - Reload after edits:  systemctl reload caddy
+#
+# Requires firewall ports 80 + 443 open, and the page built at /opt/crypto-agent/webapp.
+
+165-227-84-219.sslip.io {
+	root * /opt/crypto-agent/webapp
+	encode gzip
+	basic_auth {
+		# <username>  <bcrypt hash from `caddy hash-password`>
+		moggee REPLACE_WITH_BCRYPT_HASH
+	}
+	file_server
+}
