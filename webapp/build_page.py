@@ -230,7 +230,7 @@ HEAD = (
 RELOAD = '<script>setTimeout(function(){if(!document.hidden)location.reload()},300000);</script>'
 EXTRAS = r'''
 <div id="ptr" style="position:fixed;top:0;left:0;right:0;height:0;display:flex;align-items:center;justify-content:center;color:#9ea9ff;font:12px/1 ui-monospace,monospace;overflow:hidden;transition:height .12s;z-index:9999;background:rgba(0,0,0,.55);pointer-events:none"></div>
-<label id="rememberBox" style="position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));right:10px;z-index:9998;display:flex;gap:7px;align-items:center;background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 12px;font:11px/1 ui-monospace,monospace;color:#9ea9ff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)"><input type="checkbox" id="rememberChk" style="accent-color:#4ade80;width:15px;height:15px">stay signed in</label>
+<label id="rememberBox" style="position:fixed;top:calc(8px + env(safe-area-inset-top));right:10px;z-index:9998;display:flex;gap:7px;align-items:center;background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 12px;font:11px/1 ui-monospace,monospace;color:#9ea9ff;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)"><input type="checkbox" id="rememberChk" style="accent-color:#4ade80;width:15px;height:15px">stay signed in</label>
 <script>
 (function(){
   var TOKEN=__TOKEN__;
@@ -255,9 +255,9 @@ EXTRAS = r'''
 })();
 </script>'''.replace("__TOKEN__", json.dumps(TOKEN))
 CONTROLS = r'''
-<div id="ctrlWrap" style="position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:10px;z-index:9998;font:11px/1.2 ui-monospace,monospace">
-  <div id="ctrlPanel" style="display:none;margin-bottom:8px;background:rgba(20,28,52,.95);border:1px solid #2a355c;border-radius:12px;padding:10px 12px;min-width:186px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#9ea9ff"></div>
+<div id="ctrlWrap" style="position:fixed;top:calc(8px + env(safe-area-inset-top));left:10px;z-index:9998;font:11px/1.2 ui-monospace,monospace">
   <button id="ctrlToggle" style="background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 13px;color:#9ea9ff;font:inherit;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)">controls</button>
+  <div id="ctrlPanel" style="display:none;margin-top:8px;background:rgba(20,28,52,.95);border:1px solid #2a355c;border-radius:12px;padding:10px 12px;min-width:186px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#9ea9ff"></div>
 </div>
 <script>
 (function(){
