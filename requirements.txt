@@ -3,5 +3,6 @@
 # trading (coinbase) and the optional AI filter (anthropic).
 requests==2.34.2
 PyYAML==6.0.3
+tzdata==2026.3          # IANA tz db for zoneinfo (BST/GMT stamp) — needed on Windows
 coinbase-advanced-py==1.8.3
 anthropic==0.109.1

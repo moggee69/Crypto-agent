@@ -2,6 +2,7 @@ import json, re, time, os, sys, csv
 import _paths                       # puts swing_bot/ on sys.path, resolves DATA_DIR/DASH_HTML
 import strategy as swstrat
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 import requests
 
 OUT = _paths.DASH_HTML          # the persistent dashboard source this rewrites
@@ -188,7 +189,7 @@ for j in range(i, len(h)):
         if depth == 0:
             end = j + 1; break
 h = h[:start] + json.dumps(DATA) + h[end:]
-stamp = datetime.now(timezone.utc).strftime("%d %b %Y %H:%M UTC")
+stamp = datetime.now(ZoneInfo("Europe/London")).strftime("%d %b %Y %H:%M %Z")  # BST/GMT
 h = re.sub(r"(\$\('updated'\)\.textContent=)[^;]+;", r"\1'updated " + stamp + "';", h, count=1)
 open(OUT, "w", encoding="utf-8").write(h)
 print("done. size", round(len(h) / 1024, 1), "KB")
