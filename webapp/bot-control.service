@@ -1,0 +1,15 @@
+# systemd unit for the Trading Desk control API (freeze/resume bots from the app).
+# Install:  cp /opt/crypto-agent/webapp/bot-control.service /etc/systemd/system/
+#           systemctl daemon-reload && systemctl enable --now bot-control
+[Unit]
+Description=Trading Desk control API (freeze/resume bots)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/crypto-agent/swing_bot/venv/bin/python -u /opt/crypto-agent/webapp/bot_control.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -20,5 +20,6 @@
 		# <username>  <bcrypt hash from `caddy hash-password`>
 		moggee REPLACE_WITH_BCRYPT_HASH
 	}
+	reverse_proxy /api/* localhost:8899   # freeze/resume control API (bot_control.py)
 	file_server
 }

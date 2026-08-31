@@ -254,7 +254,38 @@ EXTRAS = r'''
     if(h>=TH){ ptr.textContent='refreshing…'; location.reload(); } else { ptr.style.height='0'; } }, {passive:true});
 })();
 </script>'''.replace("__TOKEN__", json.dumps(TOKEN))
-doc = HEAD + head_part + "</head><body>" + body_part + EXTRAS + RELOAD + "</body></html>"
+CONTROLS = r'''
+<div id="ctrlWrap" style="position:fixed;bottom:calc(10px + env(safe-area-inset-bottom));left:10px;z-index:9998;font:11px/1.2 ui-monospace,monospace">
+  <div id="ctrlPanel" style="display:none;margin-bottom:8px;background:rgba(20,28,52,.95);border:1px solid #2a355c;border-radius:12px;padding:10px 12px;min-width:186px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:#9ea9ff"></div>
+  <button id="ctrlToggle" style="background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 13px;color:#9ea9ff;font:inherit;cursor:pointer;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)">controls</button>
+</div>
+<script>
+(function(){
+  var names={"002":"Utility 002","003":"Blue-chip 003","004":"All-stars 004"};
+  var toggle=document.getElementById("ctrlToggle"), panel=document.getElementById("ctrlPanel");
+  function refresh(){
+    fetch("/api/status",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){
+      panel.innerHTML=Object.keys(names).map(function(b){
+        var halted=!!(d.bots&&d.bots[b]);
+        return '<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:5px 0">'
+          +'<span'+(halted?' style="color:#f4726a"':'')+'>'+names[b]+(halted?" · frozen":"")+'</span>'
+          +'<button data-b="'+b+'" data-h="'+halted+'" style="border:1px solid '+(halted?"#4ade80":"#f4726a")+';background:transparent;color:'+(halted?"#4ade80":"#f4726a")+';border-radius:12px;padding:3px 11px;font:inherit;cursor:pointer">'+(halted?"resume":"freeze")+'</button></div>';
+      }).join("");
+      panel.querySelectorAll("button[data-b]").forEach(function(btn){
+        btn.onclick=function(){
+          var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
+          if(!halted && !confirm("Freeze "+names[b]+"? It will place no orders until you resume it.")) return;
+          btn.textContent="…";
+          fetch("/api/"+act+"/"+b,{method:"POST"}).then(function(r){return r.json();}).then(function(){refresh();})
+            .catch(function(){alert("Control failed - try again.");refresh();});
+        };
+      });
+    }).catch(function(){panel.innerHTML='<div style="color:#f4726a">control API offline</div>';});
+  }
+  toggle.onclick=function(){ var open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open) refresh(); };
+})();
+</script>'''
+doc = HEAD + head_part + "</head><body>" + body_part + EXTRAS + CONTROLS + RELOAD + "</body></html>"
 
 tmp = OUT + ".tmp"
 open(tmp, "w", encoding="utf-8").write(doc)
