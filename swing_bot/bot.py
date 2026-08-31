@@ -120,6 +120,8 @@ def main():
           f"(no downside stop — holds through dips)")
     print(f"Polling every {cfg['poll_seconds']}s\n", flush=True)
 
+    pf.start_live()          # live only: reconcile to the real account + seed baseline once
+
     last_prices: dict[str, float] = {}
     while True:
         now = time.time()

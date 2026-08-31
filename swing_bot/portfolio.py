@@ -29,8 +29,8 @@ class Portfolio:
         self.state = self._load()
         self.live = broker.is_live(cfg)          # all three gates open? (else paper)
         self.broker = broker.Broker(cfg) if self.live else None
-        if self.live:
-            self.reconcile()                     # sync holdings to the real account at startup
+        # live startup (reconcile + one-time baseline seed) runs in start_live(),
+        # called from main() after the banner so the log reads cleanly.
 
     def _load(self) -> dict:
         if os.path.exists(self.state_file):
@@ -189,6 +189,36 @@ class Portfolio:
                 print(f"  [reconcile] {product} qty {st['qty']:g} -> {actual:g} (exchange truth)")
                 st["qty"] = actual
         self.save()
+
+    def start_live(self):
+        """Live startup: reconcile to the real account, then seed the baseline once."""
+        if not self.live:
+            return
+        self.reconcile()
+        self.seed_baseline()
+
+    def seed_baseline(self):
+        """One-time: on the first live run, market-buy each coin's cash bucket to
+        establish the starting position, then let the swing logic manage it from
+        there. Skips coins already held; runs once (guarded by baseline_seeded)."""
+        if not (self.live and self.cfg.get("live", {}).get("seed_baseline", False)):
+            return
+        if self.state.get("baseline_seeded"):
+            return
+        if broker.kill_switch_engaged():
+            print("  [seed] kill-switch set — skipping baseline seed")
+            return
+        print("  [seed] establishing baseline positions (one-time market buys)...")
+        for product, st in self.state["coins"].items():
+            if st["holding"] or st["cash"] <= 0:
+                continue
+            self._live_buy(product, st, st["cash"], "baseline seed")
+            if st["holding"]:                      # buy succeeded
+                st["peak_price"] = st["buy_price"]
+                st["armed"] = False
+        self.state["baseline_seeded"] = True
+        self.save()
+        notify.push(f"{self.name} BASELINE", "baseline positions established (live)")
 
     def equity(self, prices: dict) -> float:
         total = 0.0

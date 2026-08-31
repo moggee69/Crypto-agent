@@ -8,7 +8,7 @@
 #   tail -f /opt/crypto-agent/agent003/bot.log
 
 [Unit]
-Description=Blue-chip position bot 003 (MACD/RSI swing, majors + liquid alts, paper)
+Description=Blue-chip position bot 003 (MACD/RSI swing, majors + liquid alts, LIVE)
 After=network-online.target
 Wants=network-online.target
 
@@ -19,6 +19,7 @@ ExecStart=/opt/crypto-agent/swing_bot/venv/bin/python -u /opt/crypto-agent/swing
 Restart=always
 RestartSec=15
 EnvironmentFile=-/etc/swing-bot.env
+EnvironmentFile=-/etc/crypto-agent-003.env
 StandardOutput=append:/opt/crypto-agent/agent003/bot.log
 StandardError=append:/opt/crypto-agent/agent003/bot.log
 

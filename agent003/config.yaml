@@ -5,7 +5,7 @@
 # (swing_bot/bot.py) with this config and its own state folder — so any strategy
 # change to Agent 002 automatically applies here too.
 
-dry_run: true
+dry_run: false        # LIVE (real money) — gated by the live block below + API keys
 display_name: "Blue-chip position bot 003"   # shown in the banner + push alerts
 
 watchlist:
@@ -19,7 +19,7 @@ watchlist:
   - "ICP-USD"
 
 capital:
-  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+  total_usd: 400          # real USDC canary capital (~$50/coin); leaves a buffer under $404 for fees
 
 # BUY: MACD line crosses ABOVE its signal line (momentum turning up) while RSI is
 # below rsi_buy_max — i.e. buy a dip that's turning, don't chase strength.
@@ -56,3 +56,15 @@ liquidity:
 poll_seconds: 900
 fee_pct: 0.6
 state_file: "swing_portfolio.json"
+
+# ---- LIVE trading (real money) — ACTIVE for this bot ----
+# Real orders require ALL of: dry_run:false (above), live_trading:true, and the
+# API keys in the env (COINBASE_API_KEY + COINBASE_API_SECRET_FILE via the service).
+# Kill-switch: create /opt/crypto-agent/agent003/HALT to freeze live orders.
+live:
+  live_trading: true       # this bot IS live
+  quote_currency: USDC     # trade -USDC pairs (account holds USDC); data stays -USD
+  seed_baseline: true      # on first live run, market-buy each coin's bucket once
+  max_order_usd: 120       # single-order ceiling (~$50 buckets, so this is headroom)
+  fill_poll_seconds: 2
+  fill_poll_tries: 30
