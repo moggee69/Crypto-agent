@@ -48,6 +48,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path.rstrip("/") == "/api/login":
             return self._login()
+        if self.path.rstrip("/") == "/api/logout":
+            clear = "desk_auth=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0"
+            return self._send(200, {"ok": True}, cookie=clear)
         parts = self.path.strip("/").split("/")           # api / halt|resume / <bot>
         if len(parts) == 3 and parts[0] == "api" and parts[1] in ("halt", "resume") and parts[2] in BOTS:
             path = BOTS[parts[2]]

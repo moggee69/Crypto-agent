@@ -96,7 +96,7 @@ tr = [{"t": l["t"], "bot": l["bot"], "a": l["a"], "p": l["c"], "pnl": l["pnl"]} 
 act = {"sl": act_sl, "sw": act_sw, "a4": act_a4}
 
 # ---------- benchmark: $500 equal-weight hold of ALL 16, from the mid-July baseline ----------
-per = 500 / len(ALL)
+per = 800 / len(ALL)          # $50/coin — matches the two live bots' combined stake
 dclose = {s: {row[0] // 86400 * 86400: row[4] for row in daily[s]} for s in ALL}
 
 

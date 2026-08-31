@@ -121,7 +121,7 @@ ledger.sort(key=lambda x: x["t"])
 tr = [{"t": l["t"], "bot": l["bot"], "a": l["a"], "p": l["c"], "pnl": l["pnl"]} for l in ledger][-10:]
 act = {"sw": act_sw, "sl": act_sl, "a4": act_a4}
 
-per = 500 / len(ALL)
+per = 800 / len(ALL)          # $50/coin — matches the two live bots' combined stake
 dclose = {s: {row[0] // 86400 * 86400: row[4] for row in daily[s]} for s in ALL}
 
 
@@ -254,7 +254,7 @@ CONTROLS = r'''
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:5px 0">'
           +'<span'+(halted?' style="color:#f4726a"':'')+'>'+names[b]+(halted?" · frozen":"")+'</span>'
           +'<button data-b="'+b+'" data-h="'+halted+'" style="border:1px solid '+(halted?"#4ade80":"#f4726a")+';background:transparent;color:'+(halted?"#4ade80":"#f4726a")+';border-radius:12px;padding:3px 11px;font:inherit;cursor:pointer">'+(halted?"resume":"freeze")+'</button></div>';
-      }).join("");
+      }).join("")+'<div style="border-top:1px solid #2a355c;margin-top:9px;padding-top:9px"><button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button></div>';
       panel.querySelectorAll("button[data-b]").forEach(function(btn){
         btn.onclick=function(){
           var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
@@ -266,6 +266,8 @@ CONTROLS = r'''
             .catch(function(){alert("Control failed - try again.");refresh();});
         };
       });
+      var so=document.getElementById("signout");
+      if(so) so.onclick=function(){ fetch("/api/logout",{method:"POST"}).then(function(){location.href="/login.html";}).catch(function(){location.href="/login.html";}); };
     }).catch(function(){panel.innerHTML='<div style="color:#f4726a">control API offline</div>';});
   }
   toggle.onclick=function(){ var open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open) refresh(); };
