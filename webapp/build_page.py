@@ -251,6 +251,10 @@ CONTROLS = r'''
 (function(){
   var names={"002":"Utility 002","003":"Blue-chip 003","004":"All-stars 004"};
   var toggle=document.getElementById("ctrlToggle"), panel=document.getElementById("ctrlPanel");
+  if(document.cookie.indexOf("desk_role=view")>=0){   // read-only visitor: no controls
+    document.getElementById("ctrlWrap").innerHTML='<div style="background:rgba(20,28,52,.9);border:1px solid #2a355c;border-radius:20px;padding:6px 13px;color:#9ea9ff;font:11px/1.2 ui-monospace,monospace">\u{1F441} read only</div>';
+    return;
+  }
   function refresh(){
     fetch("/api/status",{cache:"no-store"}).then(function(r){return r.json();}).then(function(d){
       panel.innerHTML=Object.keys(names).map(function(b){
@@ -258,7 +262,9 @@ CONTROLS = r'''
         return '<div style="display:flex;justify-content:space-between;align-items:center;gap:14px;padding:5px 0">'
           +'<span'+(halted?' style="color:#f4726a"':'')+'>'+names[b]+(halted?" · frozen":"")+'</span>'
           +'<button data-b="'+b+'" data-h="'+halted+'" style="border:1px solid '+(halted?"#4ade80":"#f4726a")+';background:transparent;color:'+(halted?"#4ade80":"#f4726a")+';border-radius:12px;padding:3px 11px;font:inherit;cursor:pointer">'+(halted?"resume":"freeze")+'</button></div>';
-      }).join("")+'<div style="border-top:1px solid #2a355c;margin-top:9px;padding-top:9px"><button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button></div>';
+      }).join("")+'<div style="border-top:1px solid #2a355c;margin-top:9px;padding-top:9px;display:flex;flex-direction:column;gap:6px">'
+        +'<button id="sharebtn" style="width:100%;border:1px solid #2a355c;background:transparent;color:#4ade80;border-radius:12px;padding:6px;font:inherit;cursor:pointer">share (read-only link)</button>'
+        +'<button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button></div>';
       panel.querySelectorAll("button[data-b]").forEach(function(btn){
         btn.onclick=function(){
           var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
@@ -272,6 +278,15 @@ CONTROLS = r'''
       });
       var so=document.getElementById("signout");
       if(so) so.onclick=function(){ fetch("/api/logout",{method:"POST"}).then(function(){location.href="/login.html";}).catch(function(){location.href="/login.html";}); };
+      var sb=document.getElementById("sharebtn");
+      if(sb) sb.onclick=function(){ sb.textContent="…";
+        fetch("/api/sharelink").then(function(r){return r.json();}).then(function(d){
+          if(d&&d.link){
+            var ok=function(){ sb.textContent="link copied ✓"; setTimeout(function(){sb.textContent="share (read-only link)";},2500); };
+            if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(d.link).then(ok,function(){prompt("Copy this read-only link:",d.link);sb.textContent="share (read-only link)";});
+            else { prompt("Copy this read-only link:",d.link); sb.textContent="share (read-only link)"; }
+          } else { sb.textContent="share unavailable"; }
+        }).catch(function(){ sb.textContent="share failed"; }); };
     }).catch(function(){panel.innerHTML='<div style="color:#f4726a">control API offline</div>';});
   }
   toggle.onclick=function(){ var open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open) refresh(); };

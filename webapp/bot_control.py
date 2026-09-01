@@ -1,26 +1,29 @@
-"""Control + login API for the Trading Desk PWA (localhost only; Caddy proxies /api/*).
+"""Control + login/share API for the Trading Desk PWA (localhost; Caddy proxies /api/*).
 
-    POST /api/login        {password, remember} -> verifies the password (bcrypt) and,
-                           on success, sets the desk_auth login cookie (long-lived if
-                           remember, session-only otherwise). This backs the custom
-                           login page, replacing HTTP basic-auth.
-    GET  /api/status       -> {"bots": {"002": <halted?>, ...}}   (behind the cookie)
-    POST /api/halt/<bot>   -> create the HALT kill-switch file
-    POST /api/resume/<bot> -> remove it
+    POST /api/login   {password, remember} -> full-access login cookie (desk_auth)
+    POST /api/logout                        -> clears all cookies
+    GET  /api/enter?v=TOKEN                  -> read-only login (sets desk_view), PUBLIC
+    GET  /api/sharelink                      -> {link} for the read-only share link (admin)
+    GET  /api/status                         -> {"bots": {...}}
+    POST /api/halt|resume/<bot>              -> kill-switch (admin)
 
-Only the three known bots are addressable — no arbitrary paths.
+Admin (full) actions are enforced by Caddy (require desk_auth). Read-only visitors
+(desk_view) can view the page + /api/status only.
 """
 import json
 import os
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
 
 BOTS = {
     "002": "/opt/crypto-agent/swing_bot/HALT",
     "003": "/opt/crypto-agent/agent003/HALT",
     "004": "/opt/crypto-agent/agent004/HALT",
 }
-HASH_FILE = "/opt/crypto-agent/webapp_pw.hash"        # bcrypt hash of the site password
-TOKEN_FILE = "/opt/crypto-agent/remember_token.txt"   # the desk_auth cookie value
+HASH_FILE = "/opt/crypto-agent/webapp_pw.hash"          # bcrypt hash of the site password
+TOKEN_FILE = "/opt/crypto-agent/remember_token.txt"     # full-access cookie value
+VIEW_TOKEN_FILE = "/opt/crypto-agent/view_token.txt"    # read-only cookie value
+HOST_URL = "https://165-227-84-219.sslip.io"
 PORT = 8899
 
 
@@ -28,30 +31,59 @@ def halted():
     return {b: os.path.exists(p) for b, p in BOTS.items()}
 
 
+def _read(path):
+    try:
+        return open(path).read().strip()
+    except OSError:
+        return ""
+
+
 class Handler(BaseHTTPRequestHandler):
-    def _send(self, code, obj, cookie=None):
+    def _send(self, code, obj, cookies=None):
         body = json.dumps(obj).encode()
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
-        if cookie:
-            self.send_header("Set-Cookie", cookie)
+        for c in (cookies or []):
+            self.send_header("Set-Cookie", c)
         self.end_headers()
         self.wfile.write(body)
 
+    def _redirect(self, location, cookies=None):
+        self.send_response(302)
+        self.send_header("Location", location)
+        for c in (cookies or []):
+            self.send_header("Set-Cookie", c)
+        self.end_headers()
+
     def do_GET(self):
-        if self.path.rstrip("/") == "/api/status":
+        path = self.path.split("?")[0].rstrip("/")
+        if path == "/api/status":
             self._send(200, {"bots": halted()})
+        elif path == "/api/sharelink":
+            t = _read(VIEW_TOKEN_FILE)
+            self._send(200, {"link": (HOST_URL + "/api/enter?v=" + t) if t else ""})
+        elif path == "/api/enter":
+            tok = (parse_qs(urlparse(self.path).query).get("v") or [""])[0]
+            real = _read(VIEW_TOKEN_FILE)
+            if real and tok == real:
+                self._redirect("/", [
+                    "desk_view=%s; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=31536000" % real,
+                    "desk_role=view; Path=/; Secure; SameSite=Lax; Max-Age=31536000",
+                ])
+            else:
+                self._redirect("/login.html")
         else:
             self._send(404, {"error": "not found"})
 
     def do_POST(self):
-        if self.path.rstrip("/") == "/api/login":
+        p = self.path.rstrip("/")
+        if p == "/api/login":
             return self._login()
-        if self.path.rstrip("/") == "/api/logout":
-            clear = "desk_auth=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0"
-            return self._send(200, {"ok": True}, cookie=clear)
-        parts = self.path.strip("/").split("/")           # api / halt|resume / <bot>
+        if p == "/api/logout":
+            clr = lambda n, ho=True: "%s=; Path=/; Secure;%s SameSite=Lax; Max-Age=0" % (n, " HttpOnly;" if ho else "")
+            return self._send(200, {"ok": True}, [clr("desk_auth"), clr("desk_view"), clr("desk_role", False)])
+        parts = self.path.strip("/").split("/")            # api / halt|resume / <bot>
         if len(parts) == 3 and parts[0] == "api" and parts[1] in ("halt", "resume") and parts[2] in BOTS:
             path = BOTS[parts[2]]
             if parts[1] == "halt":
@@ -75,16 +107,15 @@ class Handler(BaseHTTPRequestHandler):
         remember = bool(data.get("remember"))
         try:
             import bcrypt
-            stored = open(HASH_FILE, "rb").read().strip()
-            ok = bool(pw) and bcrypt.checkpw(pw.encode(), stored)
+            ok = bool(pw) and bcrypt.checkpw(pw.encode(), _read(HASH_FILE).encode())
         except Exception:
             ok = False
         if not ok:
             return self._send(401, {"ok": False})
-        token = open(TOKEN_FILE).read().strip()
-        maxage = "; Max-Age=31536000" if remember else ""    # else a session cookie
+        token = _read(TOKEN_FILE)
+        maxage = "; Max-Age=31536000" if remember else ""
         cookie = f"desk_auth={token}; Path=/; Secure; HttpOnly; SameSite=Lax{maxage}"
-        self._send(200, {"ok": True}, cookie=cookie)
+        self._send(200, {"ok": True}, [cookie])
 
     def log_message(self, *a):
         pass

@@ -1,26 +1,32 @@
 # Caddy config for the private Trading Desk PWA (install to /etc/caddy/Caddyfile).
 #
-# - Auto-HTTPS: real Let's Encrypt cert for the sslip.io hostname (resolves to the
-#   droplet IP; no domain registration needed).
-# - Custom login: the site is gated by the desk_auth cookie, which /api/login sets
-#   after bot_control.py verifies the password (bcrypt). Public paths: the login
-#   page, the login endpoint, and the PWA install assets. Everything else, without a
-#   valid cookie, redirects to /login.html.
-# - The cookie value is the token in /opt/crypto-agent/remember_token.txt — paste it
-#   into the matcher below (bot_control.py reads the same file to set it).
-# - Reload after edits:  systemctl reload caddy
+# Two access tiers, both cookie-gated:
+#   - FULL  (desk_auth): the owner — full access incl. the freeze controls. Set by
+#     /api/login after bot_control.py verifies the password.
+#   - VIEW  (desk_view): read-only share-link visitors. Set by /api/enter?v=<token>.
+#     They can view the page + /api/status; all admin/write endpoints are blocked.
+# Unauthenticated requests redirect to /login.html. Public: login page + endpoint,
+# the read-only /api/enter, and the PWA install assets.
 #
-# Requires ports 80 + 443 open, the page built at /opt/crypto-agent/webapp, and the
-# bot-control service running on localhost:8899.
+# Paste the two tokens below (from remember_token.txt and view_token.txt), then
+# reload:  systemctl reload caddy
 
 165-227-84-219.sslip.io {
 	root * /opt/crypto-agent/webapp
 	encode gzip
 
-	# needs auth = no valid login cookie AND not a public path -> send to the login page
+	# admin (full) actions require the full-access cookie — read-only visitors get 403
+	@adminonly {
+		path /api/halt/* /api/resume/* /api/sharelink
+		not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
+	}
+	respond @adminonly 403
+
+	# no full AND no read-only cookie, and not a public path -> send to the login page
 	@needlogin {
 		not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
-		not path /login.html /api/login /manifest.json /icon-180.png /icon-192.png /icon-512.png
+		not header Cookie *desk_view=REPLACE_WITH_VIEW_TOKEN*
+		not path /login.html /api/login /api/enter /manifest.json /icon-180.png /icon-192.png /icon-512.png
 	}
 	redir @needlogin /login.html 302
 
