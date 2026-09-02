@@ -47,5 +47,5 @@ liquidity:
   max_spread_pct: 0.6
 
 poll_seconds: 900
-fee_pct: 1.2               # simulated taker fee (paper) — matched to the real Coinbase fee the live bots (002/003) actually pay (~1.18%)
+fee_pct: 1.1848            # simulated taker fee (paper) — calibrated to the MEASURED live rate: 002/003 each paid $0.59 on every $50 order ($4.739 on $400 = 1.1848%)
 state_file: "swing_portfolio.json"
