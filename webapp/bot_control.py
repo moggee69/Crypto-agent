@@ -23,6 +23,7 @@ BOTS = {
 HASH_FILE = "/opt/crypto-agent/webapp_pw.hash"          # bcrypt hash of the site password
 TOKEN_FILE = "/opt/crypto-agent/remember_token.txt"     # full-access cookie value
 VIEW_TOKEN_FILE = "/opt/crypto-agent/view_token.txt"    # read-only cookie value
+MINUTE_DIR = "/opt/crypto-agent/stoploss_bot/minute_data"  # per-coin minute-bar CSVs
 HOST_URL = "https://165-227-84-219.sslip.io"
 PORT = 8899
 
@@ -73,6 +74,19 @@ class Handler(BaseHTTPRequestHandler):
                 ])
             else:
                 self._redirect("/login.html")
+        elif path == "/api/minutedata":
+            coin = (parse_qs(urlparse(self.path).query).get("coin") or [""])[0]
+            name = os.path.basename(coin + ".csv")          # strip any path components (traversal guard)
+            fpath = os.path.join(MINUTE_DIR, name)
+            if not (coin.endswith("-USD") and os.path.isfile(fpath)):
+                return self._send(404, {"error": "not found"})
+            data = open(fpath, "rb").read()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/csv")
+            self.send_header("Content-Disposition", 'attachment; filename="%s"' % name)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
         else:
             self._send(404, {"error": "not found"})
 

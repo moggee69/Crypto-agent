@@ -179,9 +179,39 @@ for s in ALL:
             x = h4[b]; x[2] = max(x[2], h); x[3] = min(x[3], l); x[4] = c; x[5] += v
     candles[s] = {"D": daily[s][-60:], "H4": [h4[b] for b in sorted(h4)], "H1": hourly[s][-192:]}
 
+
+def build_logging():
+    """Per-coin summary of the minute-bar price database (stoploss_bot/minute_data/):
+    row count, first/last logged minute, latest close, and one close-per-day for charts."""
+    mdir = os.path.join(ROOT, "stoploss_bot", "minute_data")
+    out = []
+    for s in ALL:
+        path = os.path.join(mdir, f"{s}-USD.csv")
+        rows = 0; first = None; last_ts = None; last_close = None; day = {}
+        if os.path.exists(path):
+            with open(path) as f:
+                r = csv.reader(f); next(r, None)
+                for row in r:
+                    if len(row) < 5:
+                        continue
+                    try:
+                        ts = int(datetime.fromisoformat(row[0]).timestamp())
+                        close = float(row[4])
+                    except (ValueError, IndexError):
+                        continue
+                    rows += 1
+                    if first is None:
+                        first = ts
+                    last_ts = ts; last_close = close
+                    day[ts // 86400 * 86400] = round(close, 6)
+        out.append({"c": s, "rows": rows, "first": first, "last": last_ts,
+                    "px": last_close, "daily": [[d, day[d]] for d in sorted(day)]})
+    return out
+
+
 DATA = {"sl": sl, "sw": sw, "a4": a4, "pos": pos, "tr": tr, "prox": prox, "prox3": prox3,
         "prox4": prox4, "spark": spark, "spark3": spark3, "spark4": spark4, "bench": bench,
-        "act": act, "ledger": ledger, "candles": candles}
+        "act": act, "ledger": ledger, "candles": candles, "logging": build_logging()}
 
 # ---- inject DATA into the dashboard template (brace-matched swap) ----
 h = open(TEMPLATE, encoding="utf-8").read()
