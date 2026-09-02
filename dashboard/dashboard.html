@@ -188,7 +188,12 @@ tr:last-child td{border-bottom:none}
 
     <section class="panel">
       <h2>Signal radar</h2>
-      <p class="cap">Each coin's RSI/MACD state <b>and exactly what the bot is waiting for next</b> — the sell trigger price if it's armed, or the buy conditions if it's holding cash.</p>
+      <p class="cap">Each coin's RSI/MACD state and <b>what the bot is waiting to do next</b>. Every coin sits in one of three states:</p>
+      <div class="cap" style="display:flex;flex-direction:column;gap:6px;margin:-2px 0 2px;line-height:1.5">
+        <div><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line2);margin-right:9px;vertical-align:middle"></span><b style="color:var(--line2)">Riding</b> — holding the coin, up-trend intact. It sits tight and does nothing until RSI runs hot (hits 75), then it arms.</div>
+        <div><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--down);margin-right:9px;vertical-align:middle"></span><b style="color:var(--down)">Armed</b> — RSI is overbought (above 75). Now watching for the exit — it sells if the price fades 10% from its recent peak.</div>
+        <div><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--lc-orange);margin-right:9px;vertical-align:middle"></span><b style="color:var(--lc-orange)">Primed</b> — holding cash with a live buy signal (MACD turn + RSI under 40). It buys on the next 15-min cycle.</div>
+      </div>
       <div class="tfsel" id="radarsel"><button data-r="all" class="on">All</button><button data-r="sw">Utility 002</button><button data-r="sl">Blue-chip 003</button><button data-r="a4">All-stars 004</button></div>
       <div class="radar" id="radar"></div>
       <div class="note" id="radarnote"></div>
