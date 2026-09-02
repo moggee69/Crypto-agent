@@ -21,7 +21,7 @@ watchlist:
   - "BTC-USD"
 
 capital:
-  total_usd: 500          # split equally across the watchlist (one cash bucket per coin)
+  total_usd: 400          # split equally across the watchlist (one cash bucket per coin) — matches the real $400 the live bots deployed
 
 entry:
   rsi_buy_max: 40           # buy the dip-turn (MACD bullish cross while RSI below this)
