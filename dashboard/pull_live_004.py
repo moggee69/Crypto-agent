@@ -12,7 +12,6 @@ import _paths
 
 HOST = "root@165.227.84.219"
 REMOTE = "/opt/crypto-agent/agent004"
-FEE = 0.006
 
 
 def scp(remote_name, local_name):
@@ -29,6 +28,11 @@ port = json.load(open(port_path))
 rows = list(csv.DictReader(open(eq_path)))
 entry_iso = rows[0]["timestamp_utc"] if rows else ""            # launch timestamp = baseline buy time
 
+# effective buy-fee rate the bot actually booked — derived from the real fees_paid so
+# this tracks the bot's fee_pct automatically (no hardcoded rate to drift out of sync)
+total_cost = sum(c.get("cost_usd", 0.0) for c in port["coins"].values())
+fee_rate = (port.get("fees_paid", 0.0) / total_cost) if total_cost else 0.012
+
 # synthesize the 8 opening baseline buys from the real holdings (server logs none —
 # the baseline was seeded straight into the portfolio, not through the trade logger)
 with open(os.path.join(_paths.DATA_DIR, "a4_trades.csv"), "w", newline="") as fh:
@@ -37,8 +41,8 @@ with open(os.path.join(_paths.DATA_DIR, "a4_trades.csv"), "w", newline="") as fh
     for prod, c in port["coins"].items():
         cost = c.get("cost_usd", 0.0)
         w.writerow([entry_iso, "BUY", prod, round(cost, 2),
-                    f"@ {c['buy_price']:.6g} baseline fee {cost * FEE:.2f}"])
+                    f"@ {c['buy_price']:.6g} baseline fee {cost * fee_rate:.2f}"])
 
-cur = float(rows[-1]["equity"]) if rows else 500.0
+cur = float(rows[-1]["equity"]) if rows else 400.0
 pnl = float(rows[-1]["pnl_pct"]) if rows else 0.0
 print(f"pulled 004 live state: {len(port['coins'])} holdings | ${cur:.2f} ({pnl:+.2f}%) | entry {entry_iso[:10]}")
