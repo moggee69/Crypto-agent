@@ -121,28 +121,20 @@ ledger.sort(key=lambda x: x["t"])
 tr = [{"t": l["t"], "bot": l["bot"], "a": l["a"], "p": l["c"], "pnl": l["pnl"]} for l in ledger][-10:]
 act = {"sw": act_sw, "sl": act_sl, "a4": act_a4}
 
-per = 800 / len(ALL)          # $50/coin — matches the two live bots' combined stake
 dclose = {s: {row[0] // 86400 * 86400: row[4] for row in daily[s]} for s in ALL}
-
-
-def start_price(s):
-    if ENTRY_DAY in dclose[s]:
-        return dclose[s][ENTRY_DAY]
-    later = [d for d in sorted(dclose[s]) if d >= ENTRY_DAY]
-    return dclose[s][later[0]] if later else None
-
-
-BENCH_FEE = 0.011848          # the measured live Coinbase fee ($0.59 on a $50 order) a real buy of all 16 would pay
-start_px = {s: start_price(s) for s in ALL}
-# ACTUAL quantity $50 buys of each coin at the start, AFTER the buy fee — then the
-# benchmark is those fixed quantities marked to each day's price.
-bqty = {s: (per * (1 - BENCH_FEE)) / start_px[s] for s in ALL if start_px[s]}
-days_sorted = sorted({d for s in ALL for d in dclose[s] if d >= ENTRY_DAY})
+# Buy & hold = the two live bots' ACTUAL opening purchases, held forever. bench_basis.json
+# is a frozen snapshot of 002+003's real seed holdings (same coins, same fill prices, same
+# quantities, same leftover cash), so the benchmark is IDENTICAL to 002+003 combined until
+# the bots actually trade — then it stays put while they move. Regenerate only to re-baseline.
+_basis = json.load(open(os.path.join(ROOT, "bench_basis.json")))
+BH = _basis["holdings"]                                       # {coin: {qty, cash}}
+BH_CASH = sum(h.get("cash", 0.0) for h in BH.values())
+days_sorted = sorted({d for s in BH if s in dclose for d in dclose[s] if d >= ENTRY_DAY})
 bench = []
 for d in days_sorted:
-    vals = [bqty[s] * dclose[s][d] for s in ALL if d in dclose[s] and s in bqty]
-    if len(vals) == len(ALL):
-        bench.append([d, round(sum(vals), 2)])
+    vals = [BH[s]["qty"] * dclose[s][d] for s in BH if s in dclose and d in dclose[s]]
+    if len(vals) == len(BH):
+        bench.append([d, round(sum(vals) + BH_CASH, 2)])
 
 
 def build_radar(coins, state):
