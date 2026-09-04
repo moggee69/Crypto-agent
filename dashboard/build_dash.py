@@ -95,7 +95,7 @@ ledger.sort(key=lambda x: x["t"])
 tr = [{"t": l["t"], "bot": l["bot"], "a": l["a"], "p": l["c"], "pnl": l["pnl"]} for l in ledger][-10:]
 act = {"sl": act_sl, "sw": act_sw, "a4": act_a4}
 
-# ---------- benchmark: $500 equal-weight hold of ALL 16, from the mid-July baseline ----------
+# ---------- benchmark: $800 equal-weight hold of ALL 16 ($50/coin, fee-adjusted) ----------
 per = 800 / len(ALL)          # $50/coin — matches the two live bots' combined stake
 dclose = {s: {row[0] // 86400 * 86400: row[4] for row in daily[s]} for s in ALL}
 
@@ -107,7 +107,7 @@ def start_price(s):
     return dclose[s][later[0]] if later else None
 
 
-BENCH_FEE = 0.012             # same ~1.2% taker fee a real buy of all 16 would pay
+BENCH_FEE = 0.011848          # the measured live Coinbase fee ($0.59 on a $50 order) a real buy of all 16 would pay
 start_px = {s: start_price(s) for s in ALL}
 # the ACTUAL quantity of each coin $50 buys at the start, AFTER the buy fee — then
 # the benchmark is those fixed quantities marked to each day's price.

@@ -132,7 +132,7 @@ def start_price(s):
     return dclose[s][later[0]] if later else None
 
 
-BENCH_FEE = 0.012             # same ~1.2% taker fee a real buy of all 16 would pay
+BENCH_FEE = 0.011848          # the measured live Coinbase fee ($0.59 on a $50 order) a real buy of all 16 would pay
 start_px = {s: start_price(s) for s in ALL}
 # ACTUAL quantity $50 buys of each coin at the start, AFTER the buy fee — then the
 # benchmark is those fixed quantities marked to each day's price.
