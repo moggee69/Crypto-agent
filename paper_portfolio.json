@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 84.05
+      "last_price": 85.26
     },
     "ZEC": {
       "qty": 0.10183382850117816,
-      "last_price": 974.28
+      "last_price": 1027.52
     },
     "SOL": {
       "qty": 0.7256798685891586,
-      "last_price": 100.88
+      "last_price": 101.59
     },
     "XMR": {
       "qty": 0.1593140201145971,
-      "last_price": 523.84
+      "last_price": 522.99
     },
     "UNI": {
       "qty": 12.784565916398714,
-      "last_price": 6.24
+      "last_price": 6.19
     }
   }
 }
