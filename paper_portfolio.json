@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 1.3853658536585365,
-      "last_price": 84.92
+      "last_price": 85.46
     },
     "ZEC": {
       "qty": 0.10183382850117816,
-      "last_price": 1010.89
+      "last_price": 1016.98
     },
     "XMR": {
       "qty": 0.1593140201145971,
-      "last_price": 536.78
+      "last_price": 543.19
     },
     "LINK": {
       "qty": 6.779198635976129,
-      "last_price": 11.73
+      "last_price": 11.85
     },
     "BNB": {
       "qty": 0.1062590197231279,
-      "last_price": 748.36
+      "last_price": 765.36
     }
   }
 }
