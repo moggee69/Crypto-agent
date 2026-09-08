@@ -5,23 +5,23 @@
   "holdings": {
     "HYPE": {
       "qty": 0.9128251939753538,
-      "last_price": 83.19
+      "last_price": 83.68
     },
     "ZEC": {
       "qty": 0.06774780878180972,
-      "last_price": 1156.29
+      "last_price": 1182.22
     },
     "LINK": {
       "qty": 6.779198635976129,
-      "last_price": 12.54
+      "last_price": 12.58
     },
     "UNI": {
       "qty": 11.215796897038082,
-      "last_price": 6.97
+      "last_price": 6.94
     },
     "LTC": {
       "qty": 1.3860902910929056,
-      "last_price": 55.62
+      "last_price": 54.63
     }
   }
 }
