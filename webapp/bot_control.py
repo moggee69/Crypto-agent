@@ -12,6 +12,7 @@ Admin (full) actions are enforced by Caddy (require desk_auth). Read-only visito
 """
 import json
 import os
+import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -24,8 +25,27 @@ HASH_FILE = "/opt/crypto-agent/webapp_pw.hash"          # bcrypt hash of the sit
 TOKEN_FILE = "/opt/crypto-agent/remember_token.txt"     # full-access cookie value
 VIEW_TOKEN_FILE = "/opt/crypto-agent/view_token.txt"    # read-only cookie value
 MINUTE_DIR = "/opt/crypto-agent/stoploss_bot/minute_data"  # per-coin minute-bar CSVs
+SELL_DIR = "/opt/crypto-agent/swing_bot"                # cwd for sell_all.py
+SELL_SCRIPT = "/opt/crypto-agent/swing_bot/sell_all.py"
+SELL_PASSCODE_FILE = "/opt/crypto-agent/sell_passcode.txt"
+VENV_PY = "/opt/crypto-agent/swing_bot/venv/bin/python"
 HOST_URL = "https://165-227-84-219.sslip.io"
 PORT = 8899
+
+
+def _run_sell(execute, passcode):
+    """Run sell_all.py (dry-run preview, or real --execute) and return its parsed JSON.
+    sell_all.py loads the Coinbase keys itself; we only inject the passcode for --execute."""
+    env = os.environ.copy()
+    args = [VENV_PY, SELL_SCRIPT, "--json"]
+    if execute:
+        args += ["--execute", "--web"]
+        env["SELL_ALL_PASSCODE"] = passcode
+    p = subprocess.run(args, capture_output=True, text=True, timeout=240, cwd=SELL_DIR, env=env)
+    try:
+        return json.loads(p.stdout.strip())
+    except Exception:
+        return {"ok": False, "error": (p.stderr or p.stdout or "sell_all failed")[-400:]}
 
 
 def halted():
@@ -97,6 +117,19 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/api/logout":
             clr = lambda n, ho=True: "%s=; Path=/; Secure;%s SameSite=Lax; Max-Age=0" % (n, " HttpOnly;" if ho else "")
             return self._send(200, {"ok": True}, [clr("desk_auth"), clr("desk_view"), clr("desk_role", False)])
+        if p == "/api/sellall":
+            # SELLS REAL MONEY. Owner-only (Caddy @adminonly). Passcode verified here AND in
+            # sell_all.py. {confirm:false} -> dry-run preview plan; {confirm:true} -> execute.
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                data = json.loads(self.rfile.read(length) or b"{}")
+            except Exception:
+                return self._send(400, {"ok": False})
+            passcode = str(data.get("passcode", ""))
+            expected = _read(SELL_PASSCODE_FILE)
+            if not expected or passcode != expected:
+                return self._send(403, {"ok": False, "error": "bad passcode"})
+            return self._send(200, _run_sell(execute=bool(data.get("confirm")), passcode=passcode))
         parts = self.path.strip("/").split("/")            # api / halt|resume / <bot>
         if len(parts) == 3 and parts[0] == "api" and parts[1] in ("halt", "resume") and parts[2] in BOTS:
             path = BOTS[parts[2]]

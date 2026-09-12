@@ -296,7 +296,8 @@ CONTROLS = r'''
           +'<button data-b="'+b+'" data-h="'+halted+'" style="border:1px solid '+(halted?"#4ade80":"#f4726a")+';background:transparent;color:'+(halted?"#4ade80":"#f4726a")+';border-radius:12px;padding:3px 11px;font:inherit;cursor:pointer">'+(halted?"resume":"freeze")+'</button></div>';
       }).join("")+'<div style="border-top:1px solid #2a355c;margin-top:9px;padding-top:9px;display:flex;flex-direction:column;gap:6px">'
         +'<button id="sharebtn" style="width:100%;border:1px solid #2a355c;background:transparent;color:#4ade80;border-radius:12px;padding:6px;font:inherit;cursor:pointer">share (read-only link)</button>'
-        +'<button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button></div>';
+        +'<button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button>'
+        +'<button id="sellall" style="width:100%;margin-top:5px;border:1px solid #f4726a;background:rgba(244,114,106,.14);color:#f4726a;border-radius:12px;padding:6px;font:inherit;font-weight:700;cursor:pointer">⚠ SELL ALL → USDC</button></div>';
       panel.querySelectorAll("button[data-b]").forEach(function(btn){
         btn.onclick=function(){
           var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
@@ -319,6 +320,28 @@ CONTROLS = r'''
             else { prompt("Copy this read-only link:",d.link); sb.textContent="share (read-only link)"; }
           } else { sb.textContent="share unavailable"; }
         }).catch(function(){ sb.textContent="share failed"; }); };
+      var sa=document.getElementById("sellall"), saLabel="⚠ SELL ALL → USDC";
+      if(sa) sa.onclick=function(){
+        var code=prompt("SELL ALL live holdings (002 + 003) to USDC.\nEnter passcode:");
+        if(code===null) return;
+        sa.disabled=true; sa.textContent="checking…";
+        fetch("/api/sellall",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({passcode:code,confirm:false})})
+          .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+          .then(function(res){
+            sa.disabled=false; sa.textContent=saLabel;
+            if(!res.ok||!res.j||res.j.ok===false){ alert((res.j&&res.j.error==="bad passcode")?"Wrong passcode.":"Preview failed - try again."); return; }
+            var p=res.j, lines=(p.coins||[]).filter(function(c){return c.ok;}).map(function(c){return "  "+c.coin+"  ~$"+(c.value||0).toFixed(2);}).join("\n");
+            if(!confirm("This will MARKET-SELL "+p.count+" coins to USDC:\n\n"+lines+"\n\nEst. proceeds ~$"+(p.est_proceeds||0).toFixed(2)+"\nUSDC after ~$"+(p.usdc_after_est||0).toFixed(2)+"\n\nThis is IRREVERSIBLE. Sell everything now?")) return;
+            if(prompt('Final check — type SELL ALL to confirm:')!=="SELL ALL"){ alert("Not confirmed - nothing sold."); return; }
+            sa.disabled=true; sa.textContent="selling… (up to ~1 min)";
+            fetch("/api/sellall",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({passcode:code,confirm:true})})
+              .then(function(r){return r.json();}).then(function(d){
+                sa.disabled=false; sa.textContent=saLabel;
+                if(d&&d.ok){ alert("Sold. Proceeds ~$"+(d.proceeds||0).toFixed(2)+"\nUSDC now ~$"+(d.usdc_after||0).toFixed(2)+"\n\nReconcile/reset the bots before restarting them."); refresh(); }
+                else { alert("Sell failed: "+((d&&d.error)||"unknown")+"\nCHECK COINBASE before retrying."); }
+              }).catch(function(){ sa.disabled=false; sa.textContent=saLabel; alert("Request errored. Some orders MAY have gone through — CHECK COINBASE before retrying."); });
+          }).catch(function(){ sa.disabled=false; sa.textContent=saLabel; alert("Preview failed - try again."); });
+      };
     }).catch(function(){panel.innerHTML='<div style="color:#f4726a">control API offline</div>';});
   }
   toggle.onclick=function(){ var open=panel.style.display!=="none"; panel.style.display=open?"none":"block"; if(!open) refresh(); };
