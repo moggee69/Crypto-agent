@@ -5,21 +5,22 @@ and resume normal management.
 
     *** THE RESTART PLACES REAL BUY ORDERS. Claude does NOT run the live path. ***
 
-What it does NOT touch: config.yaml and bench_basis.json (git-tracked). Capital is
-written straight into the fresh portfolio JSON, so no tracked file changes.
-After seeding, the buy & hold benchmark should be regenerated from a dev machine
-(ask Claude: "refresh the benchmark") so the dashboards reset to the new cycle.
+Does NOT touch git-tracked config.yaml or bench_basis.json. Capital is written
+straight into the fresh portfolio JSON. After seeding, regenerate the buy&hold
+benchmark from a dev machine (ask Claude: "refresh the benchmark").
 
 FOUR gates for a real reset — ALL required:
   1. --execute flag       (omit = DRY RUN: prints the plan, changes NOTHING)
   2. passcode             (must match /opt/crypto-agent/sell_passcode.txt)
-  3. typed confirmation   (type: REACTIVATE)
+  3. typed confirmation   (CLI: type REACTIVATE  |  app: the on-screen confirm step)
   4. enough free USDC      (>= total to deploy, unless --force)
 
-Usage (on the droplet, from swing_bot/):
-    python reactivate.py                 # DRY RUN, per-bot capital = half your USDC
-    python reactivate.py --per 400       # DRY RUN, $400 per bot
-    python reactivate.py --per 400 --execute    # REAL: passcode + REACTIVATE, then reset+restart
+Modes:
+    python reactivate.py                        # DRY RUN, human plan (per = half your USDC)
+    python reactivate.py --per 400 --json       # DRY RUN, JSON (app preview)
+    python reactivate.py --per 400 --execute    # REAL, interactive
+    python reactivate.py --per 400 --execute --web --json   # REAL, non-interactive (app);
+                                                #   passcode via REACTIVATE_PASSCODE env
 """
 import getpass
 import json
@@ -34,7 +35,6 @@ import yaml
 ROOT = "/opt/crypto-agent"
 ENV_FILE = "/etc/crypto-agent-003.env"
 PASSCODE_FILE = os.path.join(ROOT, "sell_passcode.txt")
-# (label, dir, systemd service)
 BOTS = [("002 Utility", os.path.join(ROOT, "swing_bot"), "swing-bot"),
         ("003 Blue-chip", os.path.join(ROOT, "agent003"), "agent003-bot")]
 
@@ -55,8 +55,7 @@ def bot_cfg(botdir):
 
 
 def fresh_state(per, coins):
-    n = len(coins)
-    bucket = per / n
+    bucket = per / len(coins)
     return {"start_capital": per, "per_coin": bucket, "peak_equity": per, "fees_paid": 0.0,
             "coins": {p: {"cash": bucket, "holding": False, "qty": 0.0, "buy_price": 0.0,
                           "cost_usd": 0.0, "peak_price": 0.0, "armed": False,
@@ -71,93 +70,38 @@ def usdc_balance():
     return broker.Broker({"live": live}).available("USDC")
 
 
-def main():
-    args = sys.argv[1:]
-    execute = "--execute" in args
-    force = "--force" in args
-    web = "--web" in args
-    per = None
-    if "--per" in args:
-        per = float(args[args.index("--per") + 1])
-
+def build_plan(per_arg):
     usdc = usdc_balance()
-    if per is None:
-        per = float(math.floor(usdc / 2))          # default: split free USDC across the two bots
-
-    plans = []
+    per = per_arg if per_arg is not None else float(math.floor(usdc / 2))
+    plans, warnings = [], []
     for label, botdir, svc in BOTS:
         cfg = bot_cfg(botdir)
         coins = cfg["watchlist"]
         seed = cfg.get("live", {}).get("seed_baseline", False)
         live_on = (not cfg.get("dry_run", True)) and cfg.get("live", {}).get("live_trading", False)
-        plans.append({"label": label, "dir": botdir, "svc": svc, "coins": coins,
-                      "n": len(coins), "seed": seed, "live": live_on,
+        if not seed:
+            warnings.append(f"{label}: seed_baseline OFF (won't re-buy)")
+        if not live_on:
+            warnings.append(f"{label}: not live in config")
+        plans.append({"label": label, "dir": botdir, "svc": svc, "coins": coins, "n": len(coins),
                       "state": os.path.join(botdir, cfg.get("state_file", "swing_portfolio.json"))})
-
     total = per * len(plans)
-    print("\n=== RESET & REACTIVATE PLAN ===\n")
-    print(f"  free USDC now:        ${usdc:,.2f}")
-    print(f"  capital per bot:      ${per:,.2f}   ({len(plans)} bots -> deploy ${total:,.2f})")
-    print(f"  USDC left as dry powder: ${usdc - total:,.2f}\n")
-    ok = True
-    for p in plans:
-        warn = ""
-        if not p["seed"]:
-            warn += "  !! seed_baseline is OFF in config — it will NOT re-buy"; ok = False
-        if not p["live"]:
-            warn += "  !! bot is not live in config"; ok = False
-        print(f"  {p['label']:<14} reset to ${per:,.2f} across {p['n']} coins "
-              f"(${per / p['n']:,.2f}/coin), restart {p['svc']}{warn}")
-    if usdc < total:
-        print(f"\n  !! NOT ENOUGH USDC: need ${total:,.2f}, have ${usdc:,.2f}"
-              f"{' (override with --force)' if not force else ''}")
-        ok = ok and force
-    print("\n  On restart each bot reconciles flat, then market-buys every bucket at the\n"
-          "  current price (REAL orders), then resumes normal swing management.")
+    return usdc, per, total, plans, warnings, usdc >= total
 
-    if not execute:
-        print("\n*** DRY RUN — nothing changed. Add --execute to reset + restart for real. ***\n")
-        return
-    if not ok:
-        print("\n  ABORT: plan has blocking warnings (see !! above).\n")
-        return
 
-    # ---- gates ----
-    try:
-        expected = open(PASSCODE_FILE).read().strip()
-    except OSError:
-        expected = ""
-    if not expected:
-        print("  ABORT: passcode not set."); return
-    if web:
-        if os.environ.get("REACTIVATE_PASSCODE", "") != expected:
-            print("  ABORT: bad passcode."); return
-    else:
-        if getpass.getpass("  Passcode: ").strip() != expected:
-            print("  ABORT: wrong passcode."); return
-        if input('  Type "REACTIVATE" to confirm: ').strip() != "REACTIVATE":
-            print("  ABORT: not confirmed."); return
-
+def do_reset_restart(per, plans, poll):
     ts = int(time.time())
-    print("\n  Resetting state...")
     for p in plans:
-        d = p["dir"]
         for fn in ("swing_portfolio.json", "swing_equity.csv", "swing_trades.csv"):
-            fp = os.path.join(d, fn)
+            fp = os.path.join(p["dir"], fn)
             if os.path.exists(fp):
-                os.rename(fp, f"{fp}.pre_reactivate.{ts}")     # archive (also frees fresh logs)
+                os.rename(fp, f"{fp}.pre_reactivate.{ts}")
         json.dump(fresh_state(per, p["coins"]), open(p["state"], "w"), indent=2)
-        halt = os.path.join(d, "HALT")
+        halt = os.path.join(p["dir"], "HALT")
         if os.path.exists(halt):
             os.remove(halt)
-        print(f"    {p['label']}: fresh ${per:,.2f} baseline written, logs archived, HALT cleared")
-
-    print("\n  Restarting bots (this triggers the baseline seed-buys)...")
     subprocess.run(["systemctl", "restart"] + [p["svc"] for p in plans], check=False)
-
-    print("  Waiting for baseline seed to complete...")
-    deadline = time.time() + 180
-    done = set()
+    deadline, done = time.time() + poll, {}
     while time.time() < deadline and len(done) < len(plans):
         time.sleep(5)
         for p in plans:
@@ -166,17 +110,77 @@ def main():
             try:
                 st = json.load(open(p["state"]))
                 if st.get("baseline_seeded"):
-                    held = sum(1 for c in st["coins"].values() if c.get("holding"))
-                    print(f"    {p['label']}: seeded — {held}/{p['n']} coins bought")
-                    done.add(p["label"])
+                    done[p["label"]] = sum(1 for c in st["coins"].values() if c.get("holding"))
             except Exception:
                 pass
-    if len(done) < len(plans):
-        print("    (still seeding — check the bot logs; it may just be slow)")
+    return done
 
-    print(f"\n  Done. Bots reactivated at ${per:,.2f} each.")
-    print("  NEXT (dev machine): ask Claude to regenerate the buy&hold benchmark so the")
-    print("  dashboards reset to this new cycle.\n")
+
+def main():
+    args = sys.argv[1:]
+    execute = "--execute" in args
+    force = "--force" in args
+    web = "--web" in args
+    as_json = "--json" in args
+    per_arg = float(args[args.index("--per") + 1]) if "--per" in args else None
+
+    usdc, per, total, plans, warnings, enough = build_plan(per_arg)
+
+    if not execute:
+        if as_json:
+            print(json.dumps({"mode": "preview", "usdc": round(usdc, 2), "per": round(per, 2),
+                              "total": round(total, 2), "dry_powder": round(usdc - total, 2),
+                              "enough": enough, "warnings": warnings,
+                              "bots": [{"label": p["label"], "n": p["n"],
+                                        "per_coin": round(per / p["n"], 2)} for p in plans]}))
+            return
+        print("\n=== RESET & REACTIVATE PLAN ===\n")
+        print(f"  free USDC now:        ${usdc:,.2f}")
+        print(f"  capital per bot:      ${per:,.2f}   (deploy ${total:,.2f})")
+        print(f"  USDC left dry:        ${usdc - total:,.2f}\n")
+        for p in plans:
+            print(f"  {p['label']:<14} ${per:,.2f} / {p['n']} coins (${per / p['n']:,.2f}/coin), restart {p['svc']}")
+        for w in warnings:
+            print(f"  !! {w}")
+        if not enough:
+            print(f"  !! NOT ENOUGH USDC: need ${total:,.2f}, have ${usdc:,.2f}")
+        print("\n  On restart each bot reconciles flat then market-buys every bucket (REAL orders).")
+        print("\n*** DRY RUN — nothing changed. Add --execute to reset + restart for real. ***\n")
+        return
+
+    def fail(msg):
+        print(json.dumps({"ok": False, "error": msg}) if as_json else f"ABORT: {msg}")
+
+    try:
+        expected = open(PASSCODE_FILE).read().strip()
+    except OSError:
+        expected = ""
+    if not expected:
+        return fail("passcode not set")
+    if web:
+        if os.environ.get("REACTIVATE_PASSCODE", "") != expected:
+            return fail("bad passcode")
+    else:
+        if getpass.getpass("  Passcode: ").strip() != expected:
+            return fail("wrong passcode")
+        if input('  Type "REACTIVATE" to confirm: ').strip() != "REACTIVATE":
+            return fail("not confirmed")
+    if not enough and not force:
+        return fail(f"not enough USDC: need ${total:.2f}, have ${usdc:.2f}")
+    if warnings and not force:
+        return fail("; ".join(warnings))
+
+    if not as_json:
+        print("\n  Resetting + restarting...")
+    done = do_reset_restart(per, plans, poll=90 if web else 180)
+    out = {"ok": True, "mode": "executed", "per": round(per, 2),
+           "seeded": len(done) == len(plans),
+           "bots": [{"label": p["label"], "n": p["n"], "held": done.get(p["label"])} for p in plans]}
+    if as_json:
+        print(json.dumps(out))
+    else:
+        print(f"\n  Done. Reactivated at ${per:,.2f} each (seeded {len(done)}/{len(plans)}).")
+        print("  NEXT (dev machine): ask Claude to regenerate the buy&hold benchmark.\n")
 
 
 if __name__ == "__main__":

@@ -297,7 +297,8 @@ CONTROLS = r'''
       }).join("")+'<div style="border-top:1px solid #2a355c;margin-top:9px;padding-top:9px;display:flex;flex-direction:column;gap:6px">'
         +'<button id="sharebtn" style="width:100%;border:1px solid #2a355c;background:transparent;color:#4ade80;border-radius:12px;padding:6px;font:inherit;cursor:pointer">share (read-only link)</button>'
         +'<button id="signout" style="width:100%;border:1px solid #2a355c;background:transparent;color:#9ea9ff;border-radius:12px;padding:6px;font:inherit;cursor:pointer">sign out</button>'
-        +'<button id="sellall" style="width:100%;margin-top:5px;border:1px solid #f4726a;background:rgba(244,114,106,.14);color:#f4726a;border-radius:12px;padding:6px;font:inherit;font-weight:700;cursor:pointer">⚠ SELL ALL → USDC</button></div>';
+        +'<button id="sellall" style="width:100%;margin-top:5px;border:1px solid #f4726a;background:rgba(244,114,106,.14);color:#f4726a;border-radius:12px;padding:6px;font:inherit;font-weight:700;cursor:pointer">⚠ SELL ALL → USDC</button>'
+        +'<button id="reactivate" style="width:100%;margin-top:5px;border:1px solid #4ade80;background:rgba(74,222,128,.14);color:#4ade80;border-radius:12px;padding:6px;font:inherit;font-weight:700;cursor:pointer">↻ REACTIVATE BOTS</button></div>';
       panel.querySelectorAll("button[data-b]").forEach(function(btn){
         btn.onclick=function(){
           var b=btn.dataset.b, halted=btn.dataset.h==="true", act=halted?"resume":"halt";
@@ -341,6 +342,38 @@ CONTROLS = r'''
                 else { alert("Sell failed: "+((d&&d.error)||"unknown")+"\nCHECK COINBASE before retrying."); }
               }).catch(function(){ sa.disabled=false; sa.textContent=saLabel; alert("Request errored. Some orders MAY have gone through — CHECK COINBASE before retrying."); });
           }).catch(function(){ sa.disabled=false; sa.textContent=saLabel; alert("Preview failed - try again."); });
+      };
+      var ra=document.getElementById("reactivate"), raLabel="↻ REACTIVATE BOTS";
+      if(ra) ra.onclick=function(){
+        var code=prompt("REACTIVATE the bots — reset to a fresh baseline and buy back in.\nEnter passcode:");
+        if(code===null) return;
+        var perStr=prompt("Capital per bot in USDC?\n(leave blank = split your free USDC in half)");
+        if(perStr===null) return;
+        var per=perStr.trim()===""?null:parseFloat(perStr);
+        if(perStr.trim()!==""&&(isNaN(per)||per<=0)){ alert("Invalid capital amount."); return; }
+        ra.disabled=true; ra.textContent="checking…";
+        var body={passcode:code,confirm:false}; if(per!==null) body.per=per;
+        fetch("/api/reactivate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})
+          .then(function(r){return r.json().then(function(j){return {ok:r.ok,j:j};});})
+          .then(function(res){
+            ra.disabled=false; ra.textContent=raLabel;
+            if(!res.ok||!res.j||res.j.ok===false){ alert((res.j&&res.j.error==="bad passcode")?"Wrong passcode.":"Preview failed - try again."); return; }
+            var p=res.j, msg="Reset BOTH bots to a fresh baseline and BUY BACK IN:\n\n";
+            (p.bots||[]).forEach(function(b){ msg+="  "+b.label+": $"+p.per.toFixed(2)+" / "+b.n+" coins ($"+b.per_coin.toFixed(2)+"/coin)\n"; });
+            msg+="\nDeploy $"+p.total.toFixed(2)+" total · $"+p.dry_powder.toFixed(2)+" left dry.";
+            if(p.warnings&&p.warnings.length) msg+="\n\n!! "+p.warnings.join("\n!! ");
+            if(!p.enough){ alert(msg+"\n\n!! NOT ENOUGH USDC (need $"+p.total.toFixed(2)+", have $"+p.usdc.toFixed(2)+"). Nothing done."); return; }
+            if(!confirm(msg+"\n\nThis places REAL BUY orders. Continue?")) return;
+            if(prompt('Final check — type REACTIVATE to confirm:')!=="REACTIVATE"){ alert("Not confirmed - nothing done."); return; }
+            ra.disabled=true; ra.textContent="reactivating… (up to ~2 min)";
+            var eb={passcode:code,confirm:true}; if(per!==null) eb.per=per;
+            fetch("/api/reactivate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(eb)})
+              .then(function(r){return r.json();}).then(function(d){
+                ra.disabled=false; ra.textContent=raLabel;
+                if(d&&d.ok){ var s=(d.bots||[]).map(function(b){return "  "+b.label+": "+(b.held==null?"seeding…":b.held+"/"+b.n+" bought");}).join("\n"); alert("Reactivated at $"+(d.per||0).toFixed(2)+" each.\n\n"+s+"\n\nAsk Claude to refresh the benchmark."); refresh(); }
+                else { alert("Reactivate failed: "+((d&&d.error)||"unknown")+"\nCHECK COINBASE / bot logs before retrying."); }
+              }).catch(function(){ ra.disabled=false; ra.textContent=raLabel; alert("Request errored - some buys MAY have gone through. Check Coinbase / bot logs."); });
+          }).catch(function(){ ra.disabled=false; ra.textContent=raLabel; alert("Preview failed - try again."); });
       };
     }).catch(function(){panel.innerHTML='<div style="color:#f4726a">control API offline</div>';});
   }

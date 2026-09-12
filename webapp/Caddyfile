@@ -17,7 +17,7 @@
 
 	# admin (full) actions require the full-access cookie — read-only visitors get 403
 	@adminonly {
-		path /api/halt/* /api/resume/* /api/sharelink /api/sellall
+		path /api/halt/* /api/resume/* /api/sharelink /api/sellall /api/reactivate
 		not header Cookie *desk_auth=REPLACE_WITH_TOKEN*
 	}
 	respond @adminonly 403

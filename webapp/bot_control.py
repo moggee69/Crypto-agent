@@ -25,8 +25,9 @@ HASH_FILE = "/opt/crypto-agent/webapp_pw.hash"          # bcrypt hash of the sit
 TOKEN_FILE = "/opt/crypto-agent/remember_token.txt"     # full-access cookie value
 VIEW_TOKEN_FILE = "/opt/crypto-agent/view_token.txt"    # read-only cookie value
 MINUTE_DIR = "/opt/crypto-agent/stoploss_bot/minute_data"  # per-coin minute-bar CSVs
-SELL_DIR = "/opt/crypto-agent/swing_bot"                # cwd for sell_all.py
+SELL_DIR = "/opt/crypto-agent/swing_bot"                # cwd for sell_all.py / reactivate.py
 SELL_SCRIPT = "/opt/crypto-agent/swing_bot/sell_all.py"
+REACT_SCRIPT = "/opt/crypto-agent/swing_bot/reactivate.py"
 SELL_PASSCODE_FILE = "/opt/crypto-agent/sell_passcode.txt"
 VENV_PY = "/opt/crypto-agent/swing_bot/venv/bin/python"
 HOST_URL = "https://165-227-84-219.sslip.io"
@@ -46,6 +47,22 @@ def _run_sell(execute, passcode):
         return json.loads(p.stdout.strip())
     except Exception:
         return {"ok": False, "error": (p.stderr or p.stdout or "sell_all failed")[-400:]}
+
+
+def _run_reactivate(execute, passcode, per):
+    """Run reactivate.py (dry-run preview, or real --execute) and return its parsed JSON."""
+    env = os.environ.copy()
+    args = [VENV_PY, REACT_SCRIPT, "--json"]
+    if per is not None:
+        args += ["--per", repr(float(per))]
+    if execute:
+        args += ["--execute", "--web"]
+        env["REACTIVATE_PASSCODE"] = passcode
+    p = subprocess.run(args, capture_output=True, text=True, timeout=240, cwd=SELL_DIR, env=env)
+    try:
+        return json.loads(p.stdout.strip())
+    except Exception:
+        return {"ok": False, "error": (p.stderr or p.stdout or "reactivate failed")[-400:]}
 
 
 def halted():
@@ -130,6 +147,27 @@ class Handler(BaseHTTPRequestHandler):
             if not expected or passcode != expected:
                 return self._send(403, {"ok": False, "error": "bad passcode"})
             return self._send(200, _run_sell(execute=bool(data.get("confirm")), passcode=passcode))
+        if p == "/api/reactivate":
+            # RESETS + RE-BUYS real money. Owner-only (Caddy @adminonly). Passcode verified
+            # here AND in reactivate.py. {confirm:false} -> dry-run plan; {confirm:true} -> execute.
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                data = json.loads(self.rfile.read(length) or b"{}")
+            except Exception:
+                return self._send(400, {"ok": False})
+            passcode = str(data.get("passcode", ""))
+            expected = _read(SELL_PASSCODE_FILE)
+            if not expected or passcode != expected:
+                return self._send(403, {"ok": False, "error": "bad passcode"})
+            per = data.get("per")
+            if per not in (None, ""):
+                try:
+                    per = float(per)
+                except (TypeError, ValueError):
+                    return self._send(400, {"ok": False, "error": "bad capital"})
+            else:
+                per = None
+            return self._send(200, _run_reactivate(bool(data.get("confirm")), passcode, per))
         parts = self.path.strip("/").split("/")            # api / halt|resume / <bot>
         if len(parts) == 3 and parts[0] == "api" and parts[1] in ("halt", "resume") and parts[2] in BOTS:
             path = BOTS[parts[2]]
