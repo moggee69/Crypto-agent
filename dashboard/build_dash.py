@@ -159,9 +159,15 @@ for s in ALL:
             x = h4[b]; x[2] = max(x[2], h); x[3] = min(x[3], l); x[4] = c; x[5] += v
     candles[s] = {"D": daily[s][-60:], "H4": [h4[b] for b in sorted(h4)], "H1": hourly[s][-192:]}
 
+try:
+    _u = json.load(open(os.path.join(_paths.DATA_DIR, "usdc_balance.json")))
+    usdc = {"val": _u.get("usdc"), "as_of": _u.get("as_of")}
+except Exception:
+    usdc = None
+
 DATA = {"sl": sl, "sw": sw, "a4": a4, "pos": pos, "tr": tr, "prox": prox, "prox3": prox3, "prox4": prox4,
         "spark": spark, "spark3": spark3, "spark4": spark4, "bench": bench, "act": act,
-        "ledger": ledger, "candles": candles}
+        "ledger": ledger, "candles": candles, "usdc": usdc}
 
 # ---------- inject ---------- (OUT is the persistent clean source)
 h = open(OUT, encoding="utf-8").read()

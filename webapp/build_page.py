@@ -201,9 +201,19 @@ def build_logging():
     return out
 
 
+def read_usdc():
+    """Free USDC balance, written out-of-band by report_usdc.py (None if unavailable)."""
+    try:
+        d = json.load(open(os.path.join(ROOT, "usdc_balance.json")))
+        return {"val": d.get("usdc"), "as_of": d.get("as_of")}
+    except Exception:
+        return None
+
+
 DATA = {"sl": sl, "sw": sw, "a4": a4, "pos": pos, "tr": tr, "prox": prox, "prox3": prox3,
         "prox4": prox4, "spark": spark, "spark3": spark3, "spark4": spark4, "bench": bench,
-        "act": act, "ledger": ledger, "candles": candles, "logging": build_logging()}
+        "act": act, "ledger": ledger, "candles": candles, "logging": build_logging(),
+        "usdc": read_usdc()}
 
 # ---- inject DATA into the dashboard template (brace-matched swap) ----
 h = open(TEMPLATE, encoding="utf-8").read()
