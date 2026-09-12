@@ -18,6 +18,7 @@ historical_data/
 minute_data_sync.log
 usdc_balance.json
 usdc.log
+sell_passcode.txt
 
 # NOTE: paper_portfolio.json, equity_history.csv and trades_log.csv are
 # intentionally NOT ignored — they are the paper-trading state and must be
