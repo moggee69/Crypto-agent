@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.06774780878180972,
-      "last_price": 1248.15
+      "last_price": 1330.46
     },
     "WBT": {
       "qty": 0.9685749086479902,
-      "last_price": 77.69
+      "last_price": 77.71
     },
     "UNI": {
       "qty": 13.036065573770491,
-      "last_price": 6.12
+      "last_price": 6.32
     },
     "XRP": {
       "qty": 55.60839160839161,
-      "last_price": 1.27
+      "last_price": 1.29
     },
     "XLM": {
       "qty": 405.02615454355606,
-      "last_price": 0.174067
+      "last_price": 0.179698
     }
   }
 }
