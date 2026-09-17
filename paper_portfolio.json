@@ -1,27 +1,27 @@
 {
   "start_capital": 500,
-  "cash_usdc": 147.22739015196476,
-  "fees_paid": 73.06821292176143,
+  "cash_usdc": 133.43437224411525,
+  "fees_paid": 74.91075003700581,
   "holdings": {
     "ZEC": {
       "qty": 0.06774780878180972,
-      "last_price": 1330.46
+      "last_price": 1355.07
     },
     "WBT": {
       "qty": 0.9685749086479902,
-      "last_price": 77.71
+      "last_price": 79.03
     },
     "UNI": {
       "qty": 13.036065573770491,
-      "last_price": 6.32
+      "last_price": 6.97
     },
-    "XRP": {
-      "qty": 55.60839160839161,
-      "last_price": 1.29
+    "HYPE": {
+      "qty": 0.9784668389319552,
+      "last_price": 81.27
     },
-    "XLM": {
-      "qty": 405.02615454355606,
-      "last_price": 0.179698
+    "SOL": {
+      "qty": 0.7908503232222774,
+      "last_price": 100.55
     }
   }
 }
