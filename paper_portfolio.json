@@ -5,23 +5,23 @@
   "holdings": {
     "ZEC": {
       "qty": 0.06774780878180972,
-      "last_price": 1485.31
+      "last_price": 1451.52
     },
     "WBT": {
       "qty": 0.9685749086479902,
-      "last_price": 82.87
+      "last_price": 83.2
     },
     "UNI": {
       "qty": 13.036065573770491,
-      "last_price": 8.74
+      "last_price": 8.83
     },
     "HYPE": {
       "qty": 0.9784668389319552,
-      "last_price": 92.32
+      "last_price": 91.04
     },
     "SOL": {
       "qty": 0.7908503232222774,
-      "last_price": 110.18
+      "last_price": 112.42
     }
   }
 }
